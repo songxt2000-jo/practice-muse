@@ -239,14 +239,19 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
 
   const play = useCallback(async () => {
     if (!synthRef.current) return;
-    await synthRef.current.resume?.();
+    // `start()` already resumes from the paused position — calling resume()
+    // as well kicks off a second overlapping voice that pause() can't stop.
     synthRef.current.start();
     timerRef.current?.start();
     setPlaying(true);
   }, []);
 
   const pause = useCallback(() => {
-    synthRef.current?.pause();
+    try {
+      synthRef.current?.pause();
+    } catch {
+      synthRef.current?.stop();
+    }
     timerRef.current?.pause();
     setPlaying(false);
     setActiveMidi([]);
