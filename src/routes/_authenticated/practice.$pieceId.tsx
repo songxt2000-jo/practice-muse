@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { transcribePiece } from "@/lib/scores.functions";
-import { openBookPdf } from "@/lib/book-pdf";
+import { openBookSource } from "@/lib/book-pages";
 import { useAbcPlayer } from "@/lib/use-abc-player";
 import { PianoKeyboard } from "@/components/piano-keyboard";
 import { Metronome } from "@/components/metronome";

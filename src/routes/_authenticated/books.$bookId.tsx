@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ScanLine, Music2 } from "lucide-react";
-import { openBookPdf } from "@/lib/book-pdf";
+import { openBookSource } from "@/lib/book-pages";
 
 export const Route = createFileRoute("/_authenticated/books/$bookId")({
   head: () => ({
