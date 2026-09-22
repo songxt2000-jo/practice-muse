@@ -167,20 +167,46 @@ function ArchivePage() {
         </section>
 
         <aside className="surface-salon h-fit rounded-xl p-5">
-          <h2 className="text-xl">上传曲集</h2>
+          <h2 className="text-xl">上传乐谱</h2>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={mode === "pdf" ? "default" : "outline"}
+              onClick={() => setMode("pdf")}
+            >
+              PDF 曲集
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "images" ? "default" : "outline"}
+              onClick={() => setMode("images")}
+            >
+              乐谱图片
+            </Button>
+          </div>
           <div className="mt-4 space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="title">书名（可留空）</Label>
+              <Label htmlFor="title">书名 / 曲名（可留空）</Label>
               <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="composer">作曲家 / 编者</Label>
               <Input id="composer" value={composer} onChange={(e) => setComposer(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="pdf">PDF 文件</Label>
-              <Input id="pdf" ref={fileRef} type="file" accept="application/pdf" />
-            </div>
+            {mode === "pdf" ? (
+              <div className="space-y-2">
+                <Label htmlFor="pdf">PDF 文件</Label>
+                <Input id="pdf" ref={fileRef} type="file" accept="application/pdf" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="images">乐谱图片（可多选 / 拍照）</Label>
+                <Input id="images" ref={imageRef} type="file" accept="image/*" multiple />
+                <p className="text-xs text-muted-foreground">
+                  支持扫描版乐谱图片，也可以直接拍纸质谱子。多张图片会按文件名顺序当作连续页面。
+                </p>
+              </div>
+            )}
             <Button
               className="w-full"
               disabled={upload.isPending}
