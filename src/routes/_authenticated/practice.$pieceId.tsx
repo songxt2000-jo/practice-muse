@@ -18,14 +18,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   ChevronDown,
@@ -56,10 +48,6 @@ export const Route = createFileRoute("/_authenticated/practice/$pieceId")({
   component: PracticeStudio,
 });
 
-function formatMinutes(seconds: number) {
-  return Math.max(1, Math.round(seconds / 60));
-}
-
 function PracticeStudio() {
   const { pieceId } = Route.useParams();
   const navigate = useNavigate();
@@ -74,7 +62,6 @@ function PracticeStudio() {
   const [hideTimer, setHideTimer] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
-  const [summary, setSummary] = useState<{ pieceCount: number; totalSeconds: number } | null>(null);
   const startedAt = useRef(Date.now());
   const shellRef = useRef<HTMLDivElement | null>(null);
 
@@ -134,7 +121,8 @@ function PracticeStudio() {
 
   async function endPractice() {
     player.stop();
-    const result = await recordPiecePractice({
+    // 结束报告弹窗暂时关闭（将来做师生练习报告时恢复 UI），计时数据仍照常入库。
+    await recordPiecePractice({
       pieceId,
       pieceTitle: piece?.title ?? "未命名",
       seconds: elapsed,
@@ -142,9 +130,8 @@ function PracticeStudio() {
       loopFrom: loopOn ? loopFrom : null,
       loopTo: loopOn ? loopTo : null,
     });
-    setSummary(
-      result ?? { pieceCount: 1, totalSeconds: elapsed },
-    );
+    await finishSession();
+    navigate({ to: "/archive" });
   }
 
   async function toggleFullscreen() {
@@ -373,30 +360,6 @@ function PracticeStudio() {
         )}
       </div>
 
-      <Dialog open={summary !== null} onOpenChange={(open) => !open && setSummary(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>本次练习结束</DialogTitle>
-            <DialogDescription>
-              本次练习共 {summary?.pieceCount ?? 1} 首，共{" "}
-              {formatMinutes(summary?.totalSeconds ?? elapsed)} 分钟。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setSummary(null)}>
-              继续练习
-            </Button>
-            <Button
-              onClick={async () => {
-                await finishSession();
-                navigate({ to: "/archive" });
-              }}
-            >
-              收工
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
