@@ -377,22 +377,39 @@ function PracticeStudio() {
                       </Button>
                     ))}
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">直接改写：</span>
-                    <Input
-                      value={tokenText}
-                      onChange={(e) => setTokenText(e.target.value)}
-                      className="w-32 font-mono"
-                    />
-                    <Button size="sm" onClick={() => applyToken(tokenText.trim())}>
-                      应用
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => applyToken("z")}>
-                      变成休止符
-                    </Button>
-                    <span className="text-xs text-muted-foreground">
-                      例：C 中央 do、c 高八度、^F 升 fa、A2 加长一倍
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs text-muted-foreground">直接改写：</span>
+                      <Input
+                        value={tokenText}
+                        onChange={(e) => setTokenText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") applyToken(parseHumanNote(tokenText));
+                        }}
+                        placeholder="中央do / 升fa / 低音la 两拍"
+                        className="w-56"
+                      />
+                      <Button size="sm" onClick={() => applyToken(parseHumanNote(tokenText))}>
+                        应用
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => applyToken("z")}>
+                        变成休止符
+                      </Button>
+                      {tokenText.trim() && (
+                        <span className="text-xs text-muted-foreground">
+                          {parseHumanNote(tokenText)
+                            ? `将写成：${parseHumanNote(tokenText)}`
+                            : "没听懂这个写法，换个说法试试"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="rounded-lg bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
+                      <p className="text-foreground">可以直接用中文说，也可以写音名：</p>
+                      <p>音高：中央do / 中央C、低音sol、高音la、高音5（1~7 对应 do~si）</p>
+                      <p>升降：升fa、降si、还原mi（也可写 ^F、_B、=E）</p>
+                      <p>时长：两拍、半拍、附点，例如「低音la 两拍」「高音do 半拍」</p>
+                      <p>休止：直接输入「休止」或 z</p>
+                    </div>
                   </div>
                 </div>
               )}
