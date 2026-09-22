@@ -19,7 +19,8 @@ export type LoadedPdf = {
 export async function loadPdf(source: ArrayBuffer | Uint8Array): Promise<LoadedPdf> {
   await ensureWorker();
   const data = source instanceof Uint8Array ? source : new Uint8Array(source);
-  const doc = await pdfjsLib.getDocument({ data }).promise;
+  const loadingTask = pdfjsLib.getDocument({ data });
+  const doc = await loadingTask.promise;
 
   return {
     numPages: doc.numPages,
@@ -37,7 +38,22 @@ export async function loadPdf(source: ArrayBuffer | Uint8Array): Promise<LoadedP
       return canvas.toDataURL("image/jpeg", 0.72);
     },
     destroy: () => {
-      void (doc as unknown as { destroy: () => Promise<void> }).destroy();
+      const maybe = doc as unknown as { cleanup?: () => unknown; destroy?: () => unknown };
+      try {
+        void maybe.cleanup?.();
+      } catch {
+        // ignore
+      }
+      try {
+        void maybe.destroy?.();
+      } catch {
+        // ignore
+      }
+      try {
+        void (loadingTask as unknown as { destroy?: () => unknown }).destroy?.();
+      } catch {
+        // ignore
+      }
     },
   };
 }
