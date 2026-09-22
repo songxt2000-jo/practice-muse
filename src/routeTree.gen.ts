@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
+import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedBooksBookIdRouteImport } from './routes/_authenticated/books.$bookId'
+import { Route as AuthenticatedPracticePieceIdRouteImport } from './routes/_authenticated/practice.$pieceId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,10 +36,21 @@ const AuthenticatedArchiveRoute = AuthenticatedArchiveRouteImport.update({
   path: '/archive',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBooksBookIdRoute =
   AuthenticatedBooksBookIdRouteImport.update({
     id: '/books/$bookId',
     path: '/books/$bookId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPracticePieceIdRoute =
+  AuthenticatedPracticePieceIdRouteImport.update({
+    id: '/practice/$pieceId',
+    path: '/practice/$pieceId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -45,13 +58,17 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/archive': typeof AuthenticatedArchiveRoute
+  '/history': typeof AuthenticatedHistoryRoute
   '/books/$bookId': typeof AuthenticatedBooksBookIdRoute
+  '/practice/$pieceId': typeof AuthenticatedPracticePieceIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/archive': typeof AuthenticatedArchiveRoute
+  '/history': typeof AuthenticatedHistoryRoute
   '/books/$bookId': typeof AuthenticatedBooksBookIdRoute
+  '/practice/$pieceId': typeof AuthenticatedPracticePieceIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,20 +76,36 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/archive': typeof AuthenticatedArchiveRoute
+  '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/books/$bookId': typeof AuthenticatedBooksBookIdRoute
+  '/_authenticated/practice/$pieceId': typeof AuthenticatedPracticePieceIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/archive' | '/books/$bookId'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/archive'
+    | '/history'
+    | '/books/$bookId'
+    | '/practice/$pieceId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/archive' | '/books/$bookId'
+  to:
+    | '/'
+    | '/auth'
+    | '/archive'
+    | '/history'
+    | '/books/$bookId'
+    | '/practice/$pieceId'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/archive'
+    | '/_authenticated/history'
     | '/_authenticated/books/$bookId'
+    | '/_authenticated/practice/$pieceId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -111,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedArchiveRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/history': {
+      id: '/_authenticated/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AuthenticatedHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/books/$bookId': {
       id: '/_authenticated/books/$bookId'
       path: '/books/$bookId'
@@ -118,17 +158,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBooksBookIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/practice/$pieceId': {
+      id: '/_authenticated/practice/$pieceId'
+      path: '/practice/$pieceId'
+      fullPath: '/practice/$pieceId'
+      preLoaderRoute: typeof AuthenticatedPracticePieceIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
+  AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedBooksBookIdRoute: typeof AuthenticatedBooksBookIdRoute
+  AuthenticatedPracticePieceIdRoute: typeof AuthenticatedPracticePieceIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
+  AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedBooksBookIdRoute: AuthenticatedBooksBookIdRoute,
+  AuthenticatedPracticePieceIdRoute: AuthenticatedPracticePieceIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
