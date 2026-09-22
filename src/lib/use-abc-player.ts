@@ -84,7 +84,7 @@ export function useAbcPlayer({ abc, tempo, loop }: Options) {
         visualRef.current = visual;
 
         visual.setTiming(tempo, 0);
-        timingsRef.current = (visual.noteTimings ?? []) as TimingEvent[];
+        timingsRef.current = ((visual as any).noteTimings ?? []) as TimingEvent[];
         totalMsRef.current = (visual.getTotalTime?.() ?? 0) * 1000;
         setMeasureCount(
           timingsRef.current.reduce((max, e) => Math.max(max, (e.measureNumber ?? 0) + 1), 0),

@@ -37,7 +37,7 @@ export async function loadPdf(source: ArrayBuffer | Uint8Array): Promise<LoadedP
       return canvas.toDataURL("image/jpeg", 0.72);
     },
     destroy: () => {
-      void doc.destroy();
+      void (doc as unknown as { destroy: () => Promise<void> }).destroy();
     },
   };
 }
