@@ -93,7 +93,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
     );
     groupsRef.current = groups;
     setLineCount(groups.length);
-    applyPage(0);
+    requestAnimationFrame(() => requestAnimationFrame(() => applyPage(pageRef.current)));
   }, [applyPage]);
 
   const goToPage = useCallback((next: number) => applyPage(next), [applyPage]);
