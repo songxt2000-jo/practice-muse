@@ -29,6 +29,8 @@ import {
 import { toast } from "sonner";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Maximize2,
   Minimize2,
