@@ -115,7 +115,7 @@ function BookPage() {
       }
 
       const sorted = entries
-        .filter((e) => e.startPage >= 1 && e.startPage <= total)
+        .filter((e) => e.startPage >= firstPage && e.startPage <= total)
         .sort((a, b) => a.startPage - b.startPage)
         .filter((e, i, arr) => i === 0 || arr[i - 1]!.startPage !== e.startPage);
 
@@ -167,10 +167,30 @@ function BookPage() {
             {book?.composer ?? "未知作曲家"} · 共 {book?.page_count ?? 0} 页
           </p>
         </div>
-        <Button onClick={runScan} disabled={scanning || !book?.storage_path}>
-          {scanning ? <Loader2 className="size-4 animate-spin" /> : <ScanLine className="size-4" />}
-          {scanning ? "正在拆书…" : "AI 拆书（扫描曲目）"}
-        </Button>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="skip" className="text-xs text-muted-foreground">
+              跳过开头页数（前言 / 编者按）
+            </Label>
+            <Input
+              id="skip"
+              type="number"
+              min={0}
+              max={book?.page_count ?? 0}
+              value={skipPages}
+              onChange={(e) => setSkipPages(Math.max(0, Number(e.target.value) || 0))}
+              className="w-28"
+            />
+          </div>
+          <Button onClick={runScan} disabled={scanning || !book?.storage_path}>
+            {scanning ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <ScanLine className="size-4" />
+            )}
+            {scanning ? "正在拆书…" : "AI 拆书（扫描曲目）"}
+          </Button>
+        </div>
       </div>
 
       {scanning && <Progress value={progress} className="mt-4" />}
