@@ -14,7 +14,221 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          composer: string | null
+          cover_url: string | null
+          created_at: string
+          id: string
+          page_count: number
+          scan_status: string
+          storage_path: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          composer?: string | null
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          page_count?: number
+          scan_status?: string
+          storage_path?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          composer?: string | null
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          page_count?: number
+          scan_status?: string
+          storage_path?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pieces: {
+        Row: {
+          abc_notation: string | null
+          background: string | null
+          book_id: string | null
+          composer: string | null
+          created_at: string
+          default_tempo: number
+          end_page: number | null
+          era: string | null
+          id: string
+          key_signature: string | null
+          mood: string | null
+          sort_order: number
+          start_page: number | null
+          story: string | null
+          title: string
+          transcribe_status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          abc_notation?: string | null
+          background?: string | null
+          book_id?: string | null
+          composer?: string | null
+          created_at?: string
+          default_tempo?: number
+          end_page?: number | null
+          era?: string | null
+          id?: string
+          key_signature?: string | null
+          mood?: string | null
+          sort_order?: number
+          start_page?: number | null
+          story?: string | null
+          title: string
+          transcribe_status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          abc_notation?: string | null
+          background?: string | null
+          book_id?: string | null
+          composer?: string | null
+          created_at?: string
+          default_tempo?: number
+          end_page?: number | null
+          era?: string | null
+          id?: string
+          key_signature?: string | null
+          mood?: string | null
+          sort_order?: number
+          start_page?: number | null
+          story?: string | null
+          title?: string
+          transcribe_status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pieces_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_session_items: {
+        Row: {
+          created_at: string
+          id: string
+          loop_from: number | null
+          loop_to: number | null
+          piece_id: string | null
+          piece_title: string | null
+          seconds: number
+          session_id: string
+          tempo: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          loop_from?: number | null
+          loop_to?: number | null
+          piece_id?: string | null
+          piece_title?: string | null
+          seconds?: number
+          session_id: string
+          tempo?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          loop_from?: number | null
+          loop_to?: number | null
+          piece_id?: string | null
+          piece_title?: string | null
+          seconds?: number
+          session_id?: string
+          tempo?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_session_items_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_session_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "practice_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      practice_sessions: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          id: string
+          notes: string | null
+          piece_count: number
+          started_at: string
+          total_seconds: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          piece_count?: number
+          started_at?: string
+          total_seconds?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          piece_count?: number
+          started_at?: string
+          total_seconds?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
