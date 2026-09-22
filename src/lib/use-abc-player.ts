@@ -9,11 +9,20 @@ type TimingEvent = {
   elements?: any[][];
 };
 
+export type NoteClickInfo = {
+  startChar: number;
+  endChar: number;
+  text: string;
+  midiPitches: number[];
+};
+
 type Options = {
   abc: string | null;
   tempo: number;
   loop: { from: number; to: number } | null;
   linesPerPage?: number;
+  /** Return true to consume the click (edit mode) instead of seeking there. */
+  onNoteClick?: (info: NoteClickInfo) => boolean | void;
 };
 
 const HIGHLIGHT_CLASS = "abcjs-note_selected";
@@ -22,7 +31,7 @@ const HIGHLIGHT_CLASS = "abcjs-note_selected";
  * Renders ABC notation with abcjs and drives its piano-sound playback,
  * exposing sounding MIDI pitches, the beat clock, and staff-line paging.
  */
-export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
+export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }: Options) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const visualRef = useRef<any>(null);
   const synthRef = useRef<any>(null);
@@ -34,6 +43,8 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
   const groupsRef = useRef<HTMLElement[]>([]);
   const pageRef = useRef(0);
   const linesPerPageRef = useRef(linesPerPage);
+  const abcRef = useRef(abc);
+  const clickRef = useRef(onNoteClick);
 
   useEffect(() => {
     loopRef.current = loop;
@@ -42,6 +53,12 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
   useEffect(() => {
     linesPerPageRef.current = linesPerPage;
   }, [linesPerPage]);
+
+  useEffect(() => {
+    abcRef.current = abc;
+    clickRef.current = onNoteClick;
+  }, [abc, onNoteClick]);
+
 
 
   const [ready, setReady] = useState(false);
@@ -142,7 +159,20 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
           staffwidth: 900,
           clickListener: (abcElem: any) => {
             const start = abcElem?.startChar;
+            const end = abcElem?.endChar;
             if (typeof start !== "number") return;
+
+            const handler = clickRef.current;
+            if (handler && typeof end === "number" && end > start) {
+              const handled = handler({
+                startChar: start,
+                endChar: end,
+                text: (abcRef.current ?? "").slice(start, end),
+                midiPitches: (abcElem?.midiPitches ?? []).map((p: any) => p.pitch),
+              });
+              if (handled) return;
+            }
+
             const hit = timingsRef.current.find(
               (e) => (e.startChar ?? -1) <= start && start <= (e.endChar ?? -1),
             );
