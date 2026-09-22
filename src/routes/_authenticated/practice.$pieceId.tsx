@@ -207,11 +207,36 @@ function PracticeStudio() {
           </div>
         ) : (
           <>
-            <div className="score-sheet mt-6 overflow-x-auto p-4">
-              <div ref={player.containerRef} />
+            <div className="score-sheet mt-6 p-4">
+              <div className="overflow-hidden">
+                <div ref={player.containerRef} className="transition-transform duration-500" />
+              </div>
               {player.error && (
                 <p className="p-4 text-sm text-destructive">{player.error}</p>
               )}
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => player.goToPage(player.page - 1)}
+                disabled={player.page === 0}
+              >
+                <ChevronLeft className="size-4" />
+                上一页
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                第 {player.page + 1} / {player.pageCount} 页（每页 4 行，播放时自动翻页）
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => player.goToPage(player.page + 1)}
+                disabled={player.page >= player.pageCount - 1}
+              >
+                下一页
+                <ChevronRight className="size-4" />
+              </Button>
             </div>
 
             {focus && (
