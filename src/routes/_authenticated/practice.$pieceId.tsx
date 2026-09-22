@@ -267,7 +267,7 @@ function PracticeStudio() {
                   <Square className="size-4" />
                   停止
                 </Button>
-                <Metronome bpm={tempo} />
+                <Metronome bpm={tempo} syncBeat={player.beat} syncing={player.playing} />
                 <div className="flex items-center gap-2">
                   <Switch id="hide-timer" checked={hideTimer} onCheckedChange={setHideTimer} />
                   <Label htmlFor="hide-timer" className="text-sm">
