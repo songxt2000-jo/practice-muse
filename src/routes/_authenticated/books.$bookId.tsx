@@ -59,6 +59,7 @@ function BookPage() {
   });
 
   const storagePath = bookQuery.data?.storage_path ?? null;
+  const sourceType = bookQuery.data?.source_type ?? "pdf";
 
   // Render a handful of preview thumbnails once the book is known.
   useEffect(() => {
