@@ -102,7 +102,9 @@ function BookPage() {
       };
       const entries: Entry[] = [];
 
-      for (let start = 1; start <= total; start += batchSize) {
+      const firstPage = Math.min(Math.max(skipPages, 0) + 1, total);
+
+      for (let start = firstPage; start <= total; start += batchSize) {
         const pages: Array<{ page: number; dataUrl: string }> = [];
         for (let p = start; p < start + batchSize && p <= total; p += 1) {
           pages.push({ page: p, dataUrl: await pdf.renderPage(p, 1000) });
