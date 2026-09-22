@@ -134,7 +134,8 @@ function PracticeStudio() {
 
   async function endPractice() {
     player.stop();
-    const result = await recordPiecePractice({
+    // 结束报告弹窗暂时关闭（将来做师生练习报告时恢复 UI），计时数据仍照常入库。
+    await recordPiecePractice({
       pieceId,
       pieceTitle: piece?.title ?? "未命名",
       seconds: elapsed,
@@ -142,9 +143,8 @@ function PracticeStudio() {
       loopFrom: loopOn ? loopFrom : null,
       loopTo: loopOn ? loopTo : null,
     });
-    setSummary(
-      result ?? { pieceCount: 1, totalSeconds: elapsed },
-    );
+    await finishSession();
+    navigate({ to: "/archive" });
   }
 
   async function toggleFullscreen() {
