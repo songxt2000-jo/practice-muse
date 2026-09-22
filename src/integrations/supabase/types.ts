@@ -22,6 +22,7 @@ export type Database = {
           id: string
           page_count: number
           scan_status: string
+          source_type: string
           storage_path: string | null
           title: string
           updated_at: string
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           page_count?: number
           scan_status?: string
+          source_type?: string
           storage_path?: string | null
           title: string
           updated_at?: string
@@ -46,6 +48,7 @@ export type Database = {
           id?: string
           page_count?: number
           scan_status?: string
+          source_type?: string
           storage_path?: string | null
           title?: string
           updated_at?: string

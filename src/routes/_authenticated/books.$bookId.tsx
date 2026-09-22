@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ScanLine, Music2 } from "lucide-react";
-import { openBookPdf } from "@/lib/book-pdf";
+import { openBookSource } from "@/lib/book-pages";
 
 export const Route = createFileRoute("/_authenticated/books/$bookId")({
   head: () => ({
@@ -59,6 +59,7 @@ function BookPage() {
   });
 
   const storagePath = bookQuery.data?.storage_path ?? null;
+  const sourceType = bookQuery.data?.source_type ?? "pdf";
 
   // Render a handful of preview thumbnails once the book is known.
   useEffect(() => {
@@ -66,7 +67,7 @@ function BookPage() {
     let cancelled = false;
     (async () => {
       try {
-        const pdf = await openBookPdf(storagePath);
+        const pdf = await openBookSource(storagePath, sourceType);
         const out: string[] = [];
         const max = Math.min(pdf.numPages, 24);
         for (let i = 1; i <= max; i += 1) {
@@ -82,7 +83,7 @@ function BookPage() {
     return () => {
       cancelled = true;
     };
-  }, [storagePath]);
+  }, [storagePath, sourceType]);
 
   async function runScan() {
     const book = bookQuery.data;
@@ -90,7 +91,7 @@ function BookPage() {
     setScanning(true);
     setProgress(0);
     try {
-      const pdf = await openBookPdf(book.storage_path);
+      const pdf = await openBookSource(book.storage_path, book.source_type);
       const total = pdf.numPages;
       const batchSize = 8;
       type Entry = {

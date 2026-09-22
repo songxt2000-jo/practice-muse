@@ -26,8 +26,10 @@ export const Route = createFileRoute("/_authenticated/archive")({
 function ArchivePage() {
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState("");
   const [composer, setComposer] = useState("");
+  const [mode, setMode] = useState<"pdf" | "images">("pdf");
 
   const booksQuery = useQuery({
     queryKey: ["books"],
@@ -43,11 +45,49 @@ function ArchivePage() {
 
   const upload = useMutation({
     mutationFn: async () => {
-      const file = fileRef.current?.files?.[0];
-      if (!file) throw new Error("请选择一个 PDF 文件");
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) throw new Error("请先登录");
+
+      if (mode === "images") {
+        const files = Array.from(imageRef.current?.files ?? []).sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { numeric: true }),
+        );
+        if (!files.length) throw new Error("请选择至少一张乐谱图片");
+        if (files.length > 100) throw new Error("一次最多上传 100 张图片");
+
+        const folder = `${uid}/${crypto.randomUUID()}`;
+        for (let i = 0; i < files.length; i += 1) {
+          const file = files[i]!;
+          const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase();
+          const name = `p${String(i + 1).padStart(3, "0")}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from("scores")
+            .upload(`${folder}/${name}`, file, {
+              contentType: file.type || "image/jpeg",
+            });
+          if (uploadError) throw uploadError;
+        }
+
+        const { data, error } = await supabase
+          .from("books")
+          .insert({
+            user_id: uid,
+            title: title.trim() || files[0]!.name.replace(/\.[^.]+$/, ""),
+            composer: composer.trim() || null,
+            storage_path: folder,
+            source_type: "images",
+            page_count: files.length,
+            scan_status: "pending",
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        return data;
+      }
+
+      const file = fileRef.current?.files?.[0];
+      if (!file) throw new Error("请选择一个 PDF 文件");
 
       const buffer = await file.arrayBuffer();
       const { loadPdf } = await import("@/lib/pdf");
@@ -72,6 +112,7 @@ function ArchivePage() {
           title: title.trim() || file.name.replace(/\.pdf$/i, ""),
           composer: composer.trim() || null,
           storage_path: path,
+          source_type: "pdf",
           page_count: pageCount,
           scan_status: "pending",
         })
@@ -81,10 +122,11 @@ function ArchivePage() {
       return data;
     },
     onSuccess: () => {
-      toast.success("曲集已上传，进入书内即可开始拆书。");
+      toast.success("已上传，进入书内即可开始识别曲目。");
       setTitle("");
       setComposer("");
       if (fileRef.current) fileRef.current.value = "";
+      if (imageRef.current) imageRef.current.value = "";
       void queryClient.invalidateQueries({ queryKey: ["books"] });
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : "上传失败"),
@@ -125,20 +167,46 @@ function ArchivePage() {
         </section>
 
         <aside className="surface-salon h-fit rounded-xl p-5">
-          <h2 className="text-xl">上传曲集</h2>
+          <h2 className="text-xl">上传乐谱</h2>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={mode === "pdf" ? "default" : "outline"}
+              onClick={() => setMode("pdf")}
+            >
+              PDF 曲集
+            </Button>
+            <Button
+              type="button"
+              variant={mode === "images" ? "default" : "outline"}
+              onClick={() => setMode("images")}
+            >
+              乐谱图片
+            </Button>
+          </div>
           <div className="mt-4 space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="title">书名（可留空）</Label>
+              <Label htmlFor="title">书名 / 曲名（可留空）</Label>
               <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="composer">作曲家 / 编者</Label>
               <Input id="composer" value={composer} onChange={(e) => setComposer(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="pdf">PDF 文件</Label>
-              <Input id="pdf" ref={fileRef} type="file" accept="application/pdf" />
-            </div>
+            {mode === "pdf" ? (
+              <div className="space-y-2">
+                <Label htmlFor="pdf">PDF 文件</Label>
+                <Input id="pdf" ref={fileRef} type="file" accept="application/pdf" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="images">乐谱图片（可多选 / 拍照）</Label>
+                <Input id="images" ref={imageRef} type="file" accept="image/*" multiple />
+                <p className="text-xs text-muted-foreground">
+                  支持扫描版乐谱图片，也可以直接拍纸质谱子。多张图片会按文件名顺序当作连续页面。
+                </p>
+              </div>
+            )}
             <Button
               className="w-full"
               disabled={upload.isPending}
