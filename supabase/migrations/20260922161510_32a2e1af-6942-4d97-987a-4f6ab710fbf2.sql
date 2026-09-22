@@ -1,0 +1,1 @@
+ALTER TABLE public.books ADD COLUMN IF NOT EXISTS source_type text NOT NULL DEFAULT 'pdf';
