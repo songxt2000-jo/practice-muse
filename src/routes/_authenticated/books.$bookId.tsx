@@ -83,7 +83,7 @@ function BookPage() {
     return () => {
       cancelled = true;
     };
-  }, [storagePath]);
+  }, [storagePath, sourceType]);
 
   async function runScan() {
     const book = bookQuery.data;
