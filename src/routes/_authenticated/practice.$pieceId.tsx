@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { transcribePiece } from "@/lib/scores.functions";
 import { openBookSource } from "@/lib/book-pages";
 import { useAbcPlayer } from "@/lib/use-abc-player";
-import { replaceRange, setDuration, shiftOctave, shiftSemitone } from "@/lib/abc-edit";
+import { parseHumanNote, replaceRange, setDuration, shiftOctave, shiftSemitone, shiftStep } from "@/lib/abc-edit";
 import { PianoKeyboard } from "@/components/piano-keyboard";
 import { Metronome } from "@/components/metronome";
 import { Button } from "@/components/ui/button";
