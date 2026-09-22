@@ -29,6 +29,8 @@ import {
 import { toast } from "sonner";
 import {
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Loader2,
   Maximize2,
   Minimize2,
@@ -160,7 +162,12 @@ function PracticeStudio() {
   }
 
   return (
-    <div ref={shellRef} className="min-h-screen bg-background px-5 py-6">
+    <div
+      ref={shellRef}
+      className={`min-h-screen bg-background px-5 py-6 ${
+        focus ? "h-screen overflow-y-auto" : ""
+      }`}
+    >
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -202,11 +209,36 @@ function PracticeStudio() {
           </div>
         ) : (
           <>
-            <div className="score-sheet mt-6 overflow-x-auto p-4">
-              <div ref={player.containerRef} />
+            <div className="score-sheet mt-6 p-4">
+              <div className="overflow-hidden">
+                <div ref={player.containerRef} className="transition-transform duration-500" />
+              </div>
               {player.error && (
                 <p className="p-4 text-sm text-destructive">{player.error}</p>
               )}
+            </div>
+            <div className="mt-3 flex items-center justify-center gap-4">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => player.goToPage(player.page - 1)}
+                disabled={player.page === 0}
+              >
+                <ChevronLeft className="size-4" />
+                上一页
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                第 {player.page + 1} / {player.pageCount} 页（每页 4 行，播放时自动翻页）
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => player.goToPage(player.page + 1)}
+                disabled={player.page >= player.pageCount - 1}
+              >
+                下一页
+                <ChevronRight className="size-4" />
+              </Button>
             </div>
 
             {focus && (
@@ -237,7 +269,7 @@ function PracticeStudio() {
                   <Square className="size-4" />
                   停止
                 </Button>
-                <Metronome bpm={tempo} />
+                <Metronome bpm={tempo} syncBeat={player.beat} syncing={player.playing} />
                 <div className="flex items-center gap-2">
                   <Switch id="hide-timer" checked={hideTimer} onCheckedChange={setHideTimer} />
                   <Label htmlFor="hide-timer" className="text-sm">

@@ -6,19 +6,23 @@ type TimingEvent = {
   startChar?: number;
   endChar?: number;
   midiPitches?: Array<{ pitch: number }>;
+  elements?: any[][];
 };
 
 type Options = {
   abc: string | null;
   tempo: number;
   loop: { from: number; to: number } | null;
+  linesPerPage?: number;
 };
+
+const HIGHLIGHT_CLASS = "abcjs-note_selected";
 
 /**
  * Renders ABC notation with abcjs and drives its piano-sound playback,
- * exposing the currently sounding MIDI pitches and measure for the UI.
+ * exposing sounding MIDI pitches, the beat clock, and staff-line paging.
  */
-export function useAbcPlayer({ abc, tempo, loop }: Options) {
+export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const visualRef = useRef<any>(null);
   const synthRef = useRef<any>(null);
@@ -27,13 +31,70 @@ export function useAbcPlayer({ abc, tempo, loop }: Options) {
   const totalMsRef = useRef(0);
   const loopRef = useRef(loop);
   loopRef.current = loop;
+  const highlightedRef = useRef<any[]>([]);
+  const groupsRef = useRef<HTMLElement[]>([]);
+  const pageRef = useRef(0);
+  const linesPerPageRef = useRef(linesPerPage);
+  linesPerPageRef.current = linesPerPage;
 
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [activeMidi, setActiveMidi] = useState<number[]>([]);
   const [measure, setMeasure] = useState(0);
   const [measureCount, setMeasureCount] = useState(0);
+  const [beat, setBeat] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPageState] = useState(0);
+  const [lineCount, setLineCount] = useState(0);
+
+  const pageCount = Math.max(1, Math.ceil(lineCount / linesPerPage));
+
+  const applyPage = useCallback((next: number) => {
+    const groups = groupsRef.current;
+    const container = containerRef.current;
+    if (!container) return;
+    const viewport = container.parentElement as HTMLElement | null;
+    if (!groups.length || !viewport) {
+      container.style.transform = "";
+      return;
+    }
+    const per = linesPerPageRef.current;
+    const clamped = Math.max(0, Math.min(next, Math.ceil(groups.length / per) - 1));
+    pageRef.current = clamped;
+    setPageState(clamped);
+
+    const containerTop = container.getBoundingClientRect().top;
+    const currentShift = Number(container.dataset['shift'] ?? "0");
+    const first = groups[clamped * per]!;
+    const lastIndex = Math.min(groups.length - 1, clamped * per + per - 1);
+    const last = groups[lastIndex]!;
+    const top = first.getBoundingClientRect().top - containerTop + currentShift;
+    const bottom = last.getBoundingClientRect().bottom - containerTop + currentShift;
+
+    container.dataset['shift'] = String(top);
+    container.style.transform = `translateY(${-top}px)`;
+    viewport.style.height = `${Math.max(120, bottom - top + 16)}px`;
+  }, []);
+
+  const measureLines = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.style.transform = "";
+    container.dataset['shift'] = "0";
+    const groups = Array.from(
+      container.querySelectorAll<HTMLElement>(".abcjs-staff-group"),
+    );
+    groupsRef.current = groups;
+    setLineCount(groups.length);
+    applyPage(0);
+  }, [applyPage]);
+
+  const goToPage = useCallback((next: number) => applyPage(next), [applyPage]);
+
+  const clearHighlight = useCallback(() => {
+    for (const el of highlightedRef.current) el.classList?.remove(HIGHLIGHT_CLASS);
+    highlightedRef.current = [];
+  }, []);
 
   const seekFraction = useCallback((fraction: number) => {
     const clamped = Math.min(0.999, Math.max(0, fraction));
@@ -89,6 +150,7 @@ export function useAbcPlayer({ abc, tempo, loop }: Options) {
         setMeasureCount(
           timingsRef.current.reduce((max, e) => Math.max(max, (e.measureNumber ?? 0) + 1), 0),
         );
+        measureLines();
 
         const synth = new abcjs.synth.CreateSynth();
         await synth.init({
@@ -103,14 +165,35 @@ export function useAbcPlayer({ abc, tempo, loop }: Options) {
         timerRef.current = new abcjs.TimingCallbacks(visual, {
           qpm: tempo,
           extraMeasuresAtBeginning: 0,
+          beatCallback: (beatNumber: number) => {
+            setBeat(Math.max(0, Math.floor(beatNumber)));
+          },
           eventCallback: (event: TimingEvent | null) => {
             if (!event) {
               setPlaying(false);
               setActiveMidi([]);
+              clearHighlight();
               return;
             }
             setActiveMidi((event.midiPitches ?? []).map((p) => p.pitch));
             if (typeof event.measureNumber === "number") setMeasure(event.measureNumber);
+
+            clearHighlight();
+            const flat: any[] = [];
+            for (const group of event.elements ?? []) for (const el of group) flat.push(el);
+            for (const el of flat) el.classList?.add(HIGHLIGHT_CLASS);
+            highlightedRef.current = flat;
+
+            const anchor = flat[0] as HTMLElement | undefined;
+            const group = anchor?.closest?.(".abcjs-staff-group") as HTMLElement | undefined;
+            if (group) {
+              const index = groupsRef.current.indexOf(group);
+              if (index >= 0) {
+                const target = Math.floor(index / linesPerPageRef.current);
+                if (target !== pageRef.current) applyPage(target);
+              }
+            }
+
             const active = loopRef.current;
             if (active && typeof event.measureNumber === "number") {
               if (event.measureNumber > active.to) {
@@ -139,7 +222,13 @@ export function useAbcPlayer({ abc, tempo, loop }: Options) {
       timerRef.current = null;
       synthRef.current = null;
     };
-  }, [abc, tempo, seekToMs]);
+  }, [abc, tempo, seekToMs, measureLines, applyPage, clearHighlight]);
+
+  useEffect(() => {
+    const onResize = () => measureLines();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [measureLines]);
 
   const play = useCallback(async () => {
     if (!synthRef.current) return;
@@ -154,15 +243,18 @@ export function useAbcPlayer({ abc, tempo, loop }: Options) {
     timerRef.current?.pause();
     setPlaying(false);
     setActiveMidi([]);
-  }, []);
+    clearHighlight();
+  }, [clearHighlight]);
 
   const stop = useCallback(() => {
     synthRef.current?.stop();
     timerRef.current?.reset();
     setPlaying(false);
     setActiveMidi([]);
+    clearHighlight();
     setMeasure(0);
-  }, []);
+    setBeat(0);
+  }, [clearHighlight]);
 
   return {
     containerRef,
@@ -171,10 +263,14 @@ export function useAbcPlayer({ abc, tempo, loop }: Options) {
     activeMidi,
     measure,
     measureCount,
+    beat,
     error,
     play,
     pause,
     stop,
     seekToMeasure,
+    page,
+    pageCount,
+    goToPage,
   };
 }
