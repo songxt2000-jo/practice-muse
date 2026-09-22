@@ -32,6 +32,7 @@ function BookPage() {
   const [thumbs, setThumbs] = useState<string[]>([]);
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [skipPages, setSkipPages] = useState(0);
 
   const bookQuery = useQuery({
     queryKey: ["book", bookId],
