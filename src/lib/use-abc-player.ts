@@ -89,7 +89,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
     container.style.transform = "";
     container.dataset['shift'] = "0";
     const groups = Array.from(
-      container.querySelectorAll<HTMLElement>(".abcjs-staff-group"),
+      container.querySelectorAll<HTMLElement>(".abcjs-staff-wrapper"),
     );
     groupsRef.current = groups;
     setLineCount(groups.length);
@@ -192,7 +192,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
             highlightedRef.current = flat;
 
             const anchor = flat[0] as HTMLElement | undefined;
-            const group = anchor?.closest?.(".abcjs-staff-group") as HTMLElement | undefined;
+            const group = anchor?.closest?.(".abcjs-staff-wrapper") as HTMLElement | undefined;
             if (group) {
               const index = groupsRef.current.indexOf(group);
               if (index >= 0) {
