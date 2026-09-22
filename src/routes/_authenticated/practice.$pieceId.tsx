@@ -85,11 +85,71 @@ function PracticeStudio() {
     return () => clearInterval(id);
   }, []);
 
+  // 人工改谱
+  const [editMode, setEditMode] = useState(false);
+  const [draftAbc, setDraftAbc] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{ startChar: number; endChar: number } | null>(null);
+  const [tokenText, setTokenText] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraftAbc(piece?.abc_notation ?? null);
+    setSelection(null);
+  }, [piece?.abc_notation]);
+
+  const dirty = !!draftAbc && draftAbc !== (piece?.abc_notation ?? null);
+
+  const handleNoteClick = useCallback(
+    (info: { startChar: number; endChar: number; text: string }) => {
+      if (!editMode) return false;
+      setSelection({ startChar: info.startChar, endChar: info.endChar });
+      setTokenText(info.text);
+      return true;
+    },
+    [editMode],
+  );
+
   const player = useAbcPlayer({
-    abc: piece?.abc_notation ?? null,
+    abc: draftAbc,
     tempo,
     loop: loopOn ? { from: loopFrom - 1, to: loopTo - 1 } : null,
+    onNoteClick: handleNoteClick,
   });
+
+  const applyToken = useCallback(
+    (next: string | null) => {
+      if (!next || !selection || !draftAbc) {
+        if (!next) toast.error("这个记号暂时不支持快捷修改，可直接编辑下方文本。");
+        return;
+      }
+      setDraftAbc(replaceRange(draftAbc, selection.startChar, selection.endChar, next));
+      setSelection({ startChar: selection.startChar, endChar: selection.startChar + next.length });
+      setTokenText(next);
+    },
+    [draftAbc, selection],
+  );
+
+  const currentToken = selection && draftAbc
+    ? draftAbc.slice(selection.startChar, selection.endChar)
+    : "";
+
+  async function saveAbc() {
+    if (!draftAbc) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("pieces")
+        .update({ abc_notation: draftAbc })
+        .eq("id", pieceId);
+      if (error) throw error;
+      toast.success("修改已保存。");
+      void queryClient.invalidateQueries({ queryKey: ["piece", pieceId] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "保存失败");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const transcribe = useCallback(async () => {
     if (!piece) return;
