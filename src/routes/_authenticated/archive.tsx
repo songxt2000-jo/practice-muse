@@ -53,7 +53,11 @@ function ArchivePage() {
       const { loadPdf } = await import("@/lib/pdf");
       const pdf = await loadPdf(buffer.slice(0));
       const pageCount = pdf.numPages;
-      pdf.destroy();
+      try {
+        pdf.destroy();
+      } catch {
+        // 释放失败不影响上传
+      }
 
       const path = `${uid}/${crypto.randomUUID()}.pdf`;
       const { error: uploadError } = await supabase.storage
