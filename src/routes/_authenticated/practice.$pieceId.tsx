@@ -292,6 +292,108 @@ function PracticeStudio() {
               </Button>
             </div>
 
+            <div className="surface-salon mt-4 rounded-xl p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Pencil className="size-4 text-primary" />
+                  <Label htmlFor="edit-mode" className="text-sm">
+                    修改音符
+                  </Label>
+                  <Switch
+                    id="edit-mode"
+                    checked={editMode}
+                    onCheckedChange={(on) => {
+                      setEditMode(on);
+                      setSelection(null);
+                      if (on) player.pause();
+                    }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {editMode
+                    ? selection
+                      ? `已选中：${currentToken}`
+                      : "点击谱面上任意一个音符来修改它"
+                    : "打开后，点击谱面音符即可手工纠正 AI 识别错误"}
+                </span>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!dirty}
+                    onClick={() => {
+                      setDraftAbc(piece?.abc_notation ?? null);
+                      setSelection(null);
+                    }}
+                  >
+                    <Undo2 className="size-4" />
+                    还原
+                  </Button>
+                  <Button size="sm" disabled={!dirty || saving} onClick={saveAbc}>
+                    {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
+                    保存修改
+                  </Button>
+                </div>
+              </div>
+
+              {editMode && selection && (
+                <div className="mt-4 space-y-3 border-t border-border pt-4">
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => applyToken(shiftSemitone(currentToken, 1))}>
+                      升半音 ♯
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => applyToken(shiftSemitone(currentToken, -1))}>
+                      降半音 ♭
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => applyToken(shiftOctave(currentToken, 1))}>
+                      升八度
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => applyToken(shiftOctave(currentToken, -1))}>
+                      降八度
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">时值：</span>
+                    {[
+                      { label: "二倍", value: "2" },
+                      { label: "原长", value: "" },
+                      { label: "一半", value: "/2" },
+                      { label: "四分之一", value: "/4" },
+                      { label: "附点", value: "3/2" },
+                    ].map((option) => (
+                      <Button
+                        key={option.label}
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => applyToken(setDuration(currentToken, option.value))}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">直接改写：</span>
+                    <Input
+                      value={tokenText}
+                      onChange={(e) => setTokenText(e.target.value)}
+                      className="w-32 font-mono"
+                    />
+                    <Button size="sm" onClick={() => applyToken(tokenText.trim())}>
+                      应用
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => applyToken("z")}>
+                      变成休止符
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      例：C 中央 do、c 高八度、^F 升 fa、A2 加长一倍
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+
+
             {focus && (
               <div className="mt-6 flex justify-center">
                 <div
