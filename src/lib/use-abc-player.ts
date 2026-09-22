@@ -64,14 +64,14 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
     setPageState(clamped);
 
     const containerTop = container.getBoundingClientRect().top;
-    const currentShift = Number(container.dataset.shift ?? "0");
+    const currentShift = Number(container.dataset['shift'] ?? "0");
     const first = groups[clamped * per]!;
     const lastIndex = Math.min(groups.length - 1, clamped * per + per - 1);
     const last = groups[lastIndex]!;
     const top = first.getBoundingClientRect().top - containerTop + currentShift;
     const bottom = last.getBoundingClientRect().bottom - containerTop + currentShift;
 
-    container.dataset.shift = String(top);
+    container.dataset['shift'] = String(top);
     container.style.transform = `translateY(${-top}px)`;
     viewport.style.height = `${Math.max(120, bottom - top + 16)}px`;
   }, []);
@@ -80,7 +80,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
     const container = containerRef.current;
     if (!container) return;
     container.style.transform = "";
-    container.dataset.shift = "0";
+    container.dataset['shift'] = "0";
     const groups = Array.from(
       container.querySelectorAll<HTMLElement>(".abcjs-staff-group"),
     );
