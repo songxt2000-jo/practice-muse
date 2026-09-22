@@ -159,7 +159,20 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
           staffwidth: 900,
           clickListener: (abcElem: any) => {
             const start = abcElem?.startChar;
+            const end = abcElem?.endChar;
             if (typeof start !== "number") return;
+
+            const handler = clickRef.current;
+            if (handler && typeof end === "number" && end > start) {
+              const handled = handler({
+                startChar: start,
+                endChar: end,
+                text: (abcRef.current ?? "").slice(start, end),
+                midiPitches: (abcElem?.midiPitches ?? []).map((p: any) => p.pitch),
+              });
+              if (handled) return;
+            }
+
             const hit = timingsRef.current.find(
               (e) => (e.startChar ?? -1) <= start && start <= (e.endChar ?? -1),
             );
