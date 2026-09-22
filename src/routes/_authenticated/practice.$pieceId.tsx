@@ -97,12 +97,12 @@ function PracticeStudio() {
     try {
       const { data: book, error } = await supabase
         .from("books")
-        .select("storage_path")
+        .select("storage_path, source_type")
         .eq("id", piece.book_id!)
         .single();
       if (error || !book?.storage_path) throw new Error("找不到曲集文件");
 
-      const pdf = await openBookPdf(book.storage_path);
+      const pdf = await openBookSource(book.storage_path, book.source_type);
       const start = piece.start_page ?? 1;
       const end = Math.min(piece.end_page ?? start, start + 7, pdf.numPages);
       const pages: Array<{ page: number; dataUrl: string }> = [];

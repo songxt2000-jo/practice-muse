@@ -66,7 +66,7 @@ function BookPage() {
     let cancelled = false;
     (async () => {
       try {
-        const pdf = await openBookPdf(storagePath);
+        const pdf = await openBookSource(storagePath, sourceType);
         const out: string[] = [];
         const max = Math.min(pdf.numPages, 24);
         for (let i = 1; i <= max; i += 1) {
@@ -90,7 +90,7 @@ function BookPage() {
     setScanning(true);
     setProgress(0);
     try {
-      const pdf = await openBookPdf(book.storage_path);
+      const pdf = await openBookSource(book.storage_path, book.source_type);
       const total = pdf.numPages;
       const batchSize = 8;
       type Entry = {
