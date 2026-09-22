@@ -160,7 +160,12 @@ function PracticeStudio() {
   }
 
   return (
-    <div ref={shellRef} className="min-h-screen bg-background px-5 py-6">
+    <div
+      ref={shellRef}
+      className={`min-h-screen bg-background px-5 py-6 ${
+        focus ? "h-screen overflow-y-auto" : ""
+      }`}
+    >
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
