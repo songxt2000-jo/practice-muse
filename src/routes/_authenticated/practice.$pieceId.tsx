@@ -339,6 +339,12 @@ function PracticeStudio() {
               {editMode && selection && (
                 <div className="mt-4 space-y-3 border-t border-border pt-4">
                   <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => applyToken(shiftStep(currentToken, 1))}>
+                      升一个音
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => applyToken(shiftStep(currentToken, -1))}>
+                      降一个音
+                    </Button>
                     <Button size="sm" variant="secondary" onClick={() => applyToken(shiftSemitone(currentToken, 1))}>
                       升半音 ♯
                     </Button>
