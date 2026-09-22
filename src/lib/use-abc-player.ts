@@ -30,12 +30,19 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4 }: Options) {
   const timingsRef = useRef<TimingEvent[]>([]);
   const totalMsRef = useRef(0);
   const loopRef = useRef(loop);
-  loopRef.current = loop;
   const highlightedRef = useRef<any[]>([]);
   const groupsRef = useRef<HTMLElement[]>([]);
   const pageRef = useRef(0);
   const linesPerPageRef = useRef(linesPerPage);
-  linesPerPageRef.current = linesPerPage;
+
+  useEffect(() => {
+    loopRef.current = loop;
+  }, [loop]);
+
+  useEffect(() => {
+    linesPerPageRef.current = linesPerPage;
+  }, [linesPerPage]);
+
 
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
