@@ -9,6 +9,7 @@ import { useAbcPlayer } from "@/lib/use-abc-player";
 import { parseHumanNote, replaceRange, setDuration, shiftOctave, shiftSemitone, shiftStep } from "@/lib/abc-edit";
 import { PianoKeyboard } from "@/components/piano-keyboard";
 import { Metronome } from "@/components/metronome";
+import { MusicBoxBallerina } from "@/components/music-box-ballerina";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -417,20 +418,7 @@ function PracticeStudio() {
 
 
 
-            {focus && (
-              <div className="mt-6 flex justify-center">
-                <div
-                  className="text-6xl"
-                  style={{
-                    animation: "angel-spin 6s linear infinite",
-                    animationPlayState: player.playing ? "running" : "paused",
-                    transition: "transform 1.2s ease-out",
-                  }}
-                >
-                  🩰
-                </div>
-              </div>
-            )}
+            {focus && <MusicBoxBallerina playing={player.playing} className="mt-6" />}
 
             <div className="surface-salon mt-6 rounded-xl p-5">
               <div className="flex flex-wrap items-center gap-3">
