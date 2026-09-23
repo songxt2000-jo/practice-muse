@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ScanLine, Music2 } from "lucide-react";
+import { Loader2, ScanLine, Music2, BookOpen } from "lucide-react";
 import { openBookSource } from "@/lib/book-pages";
 
 export const Route = createFileRoute("/_authenticated/books/$bookId")({
@@ -205,11 +205,9 @@ function BookPage() {
         )}
         <div className="mt-4 grid gap-3">
           {piecesQuery.data?.map((piece) => (
-            <Link
+            <div
               key={piece.id}
-              to="/practice/$pieceId"
-              params={{ pieceId: piece.id }}
-              className="surface-salon flex items-center justify-between rounded-xl px-5 py-4 transition hover:border-primary"
+              className="surface-salon flex flex-wrap items-center justify-between gap-3 rounded-xl px-5 py-4"
             >
               <div>
                 <p className="text-lg">{piece.title}</p>
@@ -218,11 +216,25 @@ function BookPage() {
                   {piece.mood ? ` · ${piece.mood}` : ""}
                 </p>
               </div>
-              <span className="flex items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
-                <Music2 className="size-4" />
-                {piece.transcribe_status === "ready" ? "可练习" : "待识谱"}
-              </span>
-            </Link>
+              <div className="flex flex-wrap gap-2">
+                <Button asChild size="sm" variant="secondary">
+                  <Link
+                    to="/practice/$pieceId"
+                    params={{ pieceId: piece.id }}
+                    search={{ mode: "follow" }}
+                  >
+                    <BookOpen className="size-4" />
+                    原谱跟随
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link to="/practice/$pieceId" params={{ pieceId: piece.id }} search={{ mode: "ai" }}>
+                    <Music2 className="size-4" />
+                    {piece.transcribe_status === "ready" ? "AI 识谱 · 可练习" : "AI 识谱"}
+                  </Link>
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
       </section>
