@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ScanLine, Music2, BookOpen, Plus } from "lucide-react";
+import { Loader2, ScanLine, Music2, BookOpen, Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import { openBookSource } from "@/lib/book-pages";
 
 export const Route = createFileRoute("/_authenticated/books/$bookId")({
@@ -39,6 +39,11 @@ function BookPage() {
   const [manualStart, setManualStart] = useState("");
   const [manualEnd, setManualEnd] = useState("");
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const bookQuery = useQuery({
     queryKey: ["book", bookId],
@@ -264,6 +269,59 @@ function BookPage() {
     }
   }
 
+  type PieceRow = NonNullable<typeof piecesQuery.data>[number];
+
+  function startEdit(p: PieceRow) {
+    setEditingId(p.id);
+    setEditTitle(p.title);
+    setEditStart(String(p.start_page ?? ""));
+    setEditEnd(String(p.end_page ?? ""));
+  }
+
+  async function resort() {
+    const { data: fresh } = await supabase.from("pieces").select("id, start_page").eq("book_id", bookId);
+    const ordered = (fresh ?? []).slice().sort((a, b) => (a.start_page ?? 0) - (b.start_page ?? 0));
+    await Promise.all(ordered.map((p, i) => supabase.from("pieces").update({ sort_order: i }).eq("id", p.id)));
+  }
+
+  async function saveEdit(p: PieceRow) {
+    const total = bookQuery.data?.page_count ?? 0;
+    const title = editTitle.trim();
+    const start = Number(editStart);
+    const end = Number(editEnd || editStart);
+    if (!title) { toast.error("曲名不能为空"); return; }
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || (total && end > total)) {
+      toast.error(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`);
+      return;
+    }
+    const pagesChanged = start !== p.start_page || end !== p.end_page;
+    if (pagesChanged && p.abc_notation && !window.confirm("这首已经识过谱，页码改了之后旧的识谱结果可能对不上。仍然保留旧结果吗？（可之后在识谱页重新识别）")) {
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase.from("pieces").update({ title, start_page: start, end_page: end }).eq("id", p.id);
+      if (error) throw error;
+      if (pagesChanged) await resort();
+      toast.success("已更新");
+      setEditingId(null);
+      void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "保存失败");
+    } finally {
+      setSavingEdit(false);
+    }
+  }
+
+  async function deletePiece(p: PieceRow) {
+    if (!window.confirm(`确定删除《${p.title}》吗？${p.abc_notation ? "它的识谱结果也会一起删除。" : ""}`)) return;
+    const { error } = await supabase.from("pieces").delete().eq("id", p.id);
+    if (error) { toast.error(error.message); return; }
+    await resort();
+    toast.success("已删除");
+    void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
+  }
+
   const book = bookQuery.data;
 
   return (
@@ -342,31 +400,65 @@ function BookPage() {
               key={piece.id}
               className="surface-salon flex flex-wrap items-center justify-between gap-3 rounded-xl px-5 py-4"
             >
-              <div>
-                <p className="text-lg">{piece.title}</p>
-                <p className="text-sm text-muted-foreground">
-                  第 {piece.start_page}–{piece.end_page} 页
-                  {piece.mood ? ` · ${piece.mood}` : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild size="sm" variant="secondary">
-                  <Link
-                    to="/practice/$pieceId"
-                    params={{ pieceId: piece.id }}
-                    search={{ mode: "follow" }}
-                  >
-                    <BookOpen className="size-4" />
-                    原谱跟随
-                  </Link>
-                </Button>
-                <Button asChild size="sm" variant="outline">
-                  <Link to="/practice/$pieceId" params={{ pieceId: piece.id }} search={{ mode: "ai" }}>
-                    <Music2 className="size-4" />
-                    {piece.transcribe_status === "ready" ? "AI 识谱 · 可练习" : "AI 识谱"}
-                  </Link>
-                </Button>
-              </div>
+              {editingId === piece.id ? (
+                <div className="flex flex-1 flex-wrap items-end gap-2">
+                  <div className="min-w-40 flex-1 space-y-1">
+                    <Label className="text-xs text-muted-foreground">曲名</Label>
+                    <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">起始页</Label>
+                    <Input type="number" min={1} value={editStart} onChange={(e) => setEditStart(e.target.value)} className="w-20" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">结束页</Label>
+                    <Input type="number" min={1} value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className="w-20" />
+                  </div>
+                  <Button size="sm" onClick={() => saveEdit(piece)} disabled={savingEdit}>
+                    {savingEdit ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                    保存
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                    <X className="size-4" />
+                    取消
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-lg">{piece.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      第 {piece.start_page}–{piece.end_page} 页
+                      {piece.mood ? ` · ${piece.mood}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => startEdit(piece)} aria-label="修改曲名和页码">
+                      <Pencil className="size-4" />
+                      修改
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => deletePiece(piece)} aria-label="删除曲目">
+                      <Trash2 className="size-4" />
+                    </Button>
+                    <Button asChild size="sm" variant="secondary">
+                      <Link
+                        to="/practice/$pieceId"
+                        params={{ pieceId: piece.id }}
+                        search={{ mode: "follow" }}
+                      >
+                        <BookOpen className="size-4" />
+                        原谱跟随
+                      </Link>
+                    </Button>
+                    <Button asChild size="sm" variant="outline">
+                      <Link to="/practice/$pieceId" params={{ pieceId: piece.id }} search={{ mode: "ai" }}>
+                        <Music2 className="size-4" />
+                        {piece.transcribe_status === "ready" ? "AI 识谱 · 可练习" : "AI 识谱"}
+                      </Link>
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
