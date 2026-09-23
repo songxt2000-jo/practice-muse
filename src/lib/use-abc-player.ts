@@ -33,6 +33,13 @@ const HIGHLIGHT_CLASS = "abcjs-note_selected";
  */
 export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }: Options) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  // The score container is mounted/unmounted by mode switches, so track it as
+  // state: the render effect below must re-run when the element appears.
+  const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null);
+  const setContainer = useCallback((el: HTMLDivElement | null) => {
+    containerRef.current = el;
+    setContainerEl(el);
+  }, []);
   const visualRef = useRef<any>(null);
   const synthRef = useRef<any>(null);
   const timerRef = useRef<any>(null);
