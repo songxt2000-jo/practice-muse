@@ -308,7 +308,7 @@ export function FollowerCore({
           原谱跟随
         </span>
         <span className="text-xs text-muted-foreground">
-          光标按拍子走在你的原谱上，不出声，不用 AI
+          光标按拍子走在你的原谱上，不用 AI
         </span>
       </div>
 
@@ -393,6 +393,13 @@ export function FollowerCore({
           <Square className="size-4" />
           回到起点
         </Button>
+
+        <Metronome
+          bpm={tempo}
+          beatsPerBar={settings.beatsPerMeasure}
+          syncBeat={Math.floor(beat)}
+          syncing={playing}
+        />
 
         <div className="flex items-center gap-1.5" aria-label="拍点">
           {Array.from({ length: settings.beatsPerMeasure }, (_, i) => (
