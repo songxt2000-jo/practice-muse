@@ -168,6 +168,7 @@ function BookPage() {
     if (!title) { toast.error("请先填写曲名"); return; }
     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || (total && end > total)) {
       toast.error(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`);
+      return;
     }
     setAdding(true);
     try {
