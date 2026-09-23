@@ -69,6 +69,7 @@ export type Database = {
           id: string
           key_signature: string | null
           mood: string | null
+          score_layout: Json | null
           sort_order: number
           start_page: number | null
           story: string | null
@@ -89,6 +90,7 @@ export type Database = {
           id?: string
           key_signature?: string | null
           mood?: string | null
+          score_layout?: Json | null
           sort_order?: number
           start_page?: number | null
           story?: string | null
@@ -109,6 +111,7 @@ export type Database = {
           id?: string
           key_signature?: string | null
           mood?: string | null
+          score_layout?: Json | null
           sort_order?: number
           start_page?: number | null
           story?: string | null

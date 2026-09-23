@@ -1,0 +1,1 @@
+ALTER TABLE public.pieces ADD COLUMN score_layout jsonb DEFAULT NULL;
