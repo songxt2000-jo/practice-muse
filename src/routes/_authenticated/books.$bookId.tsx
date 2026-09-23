@@ -160,7 +160,7 @@ function BookPage() {
         end_page: number;
         sort_order: number;
       }> = [];
-      const sortUpdates: Array<Promise<unknown>> = [];
+      const sortUpdates: Array<PromiseLike<unknown>> = [];
       let preserved = 0;
 
       sorted.forEach((entry, index) => {
