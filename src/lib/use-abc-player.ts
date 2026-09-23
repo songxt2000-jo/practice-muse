@@ -266,7 +266,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
       timerRef.current = null;
       synthRef.current = null;
     };
-  }, [abc, tempo, seekToMs, measureLines, applyPage, clearHighlight]);
+  }, [abc, tempo, containerEl, seekToMs, measureLines, applyPage, clearHighlight]);
 
   useEffect(() => {
     const onResize = () => measureLines();
@@ -306,7 +306,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
   }, [clearHighlight]);
 
   return {
-    containerRef,
+    containerRef: setContainer,
     ready,
     playing,
     activeMidi,
