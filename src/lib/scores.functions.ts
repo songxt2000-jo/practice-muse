@@ -103,6 +103,8 @@ export const transcribePiece = createServerFn({ method: "POST" })
         "你是专业的钢琴乐谱 OCR 与 ABC 记谱法专家。把图片中的五线谱转写为可被 abcjs 正确渲染和播放的 ABC 记谱法。" +
         "要求：使用 %%score (V1) (V2) 双谱表，V1 为右手(treble)、V2 为左手(bass)；" +
         "写出 X:1 T: C: M: L: Q: K: 头部；小节线完整；尽量保留力度与连线；" +
+        "【只转写学生声部】：教学版曲谱常在页面下方附有 Teacher Duet / 教师伴奏 / 二重奏部分，" +
+        "通常字号和谱表明显更小、标有 R.H./L.H. 或 Teacher Duet 字样，这部分一律忽略，不要转写进 ABC。" +
         "如果某些细节无法辨认，用最合理的音符补全，保证 ABC 语法有效。" +
         "另外补充这首曲子的作曲家、年代、情绪，以及一段 100-200 字的中文创作背景与故事剧情。",
       messages: imageMessage(`曲目《${data.title}》的乐谱页面如下，请转写。`, data.pages),
