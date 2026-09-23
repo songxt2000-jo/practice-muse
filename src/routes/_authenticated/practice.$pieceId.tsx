@@ -52,7 +52,7 @@ export const Route = createFileRoute("/_authenticated/practice/$pieceId")({
     ],
   }),
   validateSearch: (search: Record<string, unknown>): { mode?: "follow" | "ai" } =>
-    search.mode === "ai" || search.mode === "follow" ? { mode: search.mode } : {},
+    search["mode"] === "ai" || search["mode"] === "follow" ? { mode: search["mode"] } : {},
   component: PracticeStudio,
 });
 
