@@ -10,7 +10,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ScanLine, Music2, BookOpen } from "lucide-react";
+import { Loader2, ScanLine, Music2, BookOpen, Plus } from "lucide-react";
 import { openBookSource } from "@/lib/book-pages";
 
 export const Route = createFileRoute("/_authenticated/books/$bookId")({
@@ -35,6 +35,10 @@ function BookPage() {
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [skipPages, setSkipPages] = useState(0);
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualStart, setManualStart] = useState("");
+  const [manualEnd, setManualEnd] = useState("");
+  const [adding, setAdding] = useState(false);
 
   const bookQuery = useQuery({
     queryKey: ["book", bookId],
@@ -156,6 +160,50 @@ function BookPage() {
     }
   }
 
+  async function addManualPiece() {
+    const total = bookQuery.data?.page_count ?? 0;
+    const start = Number(manualStart);
+    const end = Number(manualEnd || manualStart);
+    const title = manualTitle.trim();
+    if (!title) return toast.error("请先填写曲名");
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || (total && end > total)) {
+      return toast.error(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`);
+    }
+    setAdding(true);
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const existing = piecesQuery.data ?? [];
+      const { error } = await supabase.from("pieces").insert({
+        user_id: userData.user!.id,
+        book_id: bookId,
+        title,
+        composer: bookQuery.data?.composer ?? null,
+        start_page: start,
+        end_page: end,
+        sort_order: existing.length,
+      });
+      if (error) throw error;
+      // keep list in page order
+      const all = [...existing.map((p) => ({ id: p.id, start: p.start_page ?? 0 }))];
+      const { data: fresh } = await supabase.from("pieces").select("id, start_page").eq("book_id", bookId);
+      const ordered = (fresh ?? all.map((a) => ({ id: a.id, start_page: a.start })))
+        .slice()
+        .sort((a, b) => (a.start_page ?? 0) - (b.start_page ?? 0));
+      await Promise.all(
+        ordered.map((p, i) => supabase.from("pieces").update({ sort_order: i }).eq("id", p.id)),
+      );
+      toast.success(`已添加《${title}》（第 ${start}–${end} 页）`);
+      setManualTitle("");
+      setManualStart("");
+      setManualEnd("");
+      void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "添加失败");
+    } finally {
+      setAdding(false);
+    }
+  }
+
   const book = bookQuery.data;
 
   return (
@@ -197,6 +245,31 @@ function BookPage() {
       </div>
 
       {scanning && <Progress value={progress} className="mt-4" />}
+
+      <section className="surface-salon mt-6 rounded-xl p-5">
+        <h2 className="text-xl">手动拆书（不用 AI）</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          输入曲名和页码范围，直接把这几页拆成一首曲目。
+        </p>
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-48 flex-1 space-y-1">
+            <Label htmlFor="m-title" className="text-xs text-muted-foreground">曲名</Label>
+            <Input id="m-title" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="例如：小步舞曲" />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="m-start" className="text-xs text-muted-foreground">起始页</Label>
+            <Input id="m-start" type="number" min={1} value={manualStart} onChange={(e) => setManualStart(e.target.value)} className="w-24" />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="m-end" className="text-xs text-muted-foreground">结束页</Label>
+            <Input id="m-end" type="number" min={1} value={manualEnd} onChange={(e) => setManualEnd(e.target.value)} className="w-24" />
+          </div>
+          <Button variant="secondary" onClick={addManualPiece} disabled={adding}>
+            {adding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
+            添加曲目
+          </Button>
+        </div>
+      </section>
 
       <section className="mt-8">
         <h2 className="text-xl">曲目</h2>
