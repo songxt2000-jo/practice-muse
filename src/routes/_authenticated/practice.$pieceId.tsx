@@ -51,11 +51,14 @@ export const Route = createFileRoute("/_authenticated/practice/$pieceId")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { mode?: "follow" | "ai" } =>
+    search["mode"] === "ai" || search["mode"] === "follow" ? { mode: search["mode"] } : {},
   component: PracticeStudio,
 });
 
 function PracticeStudio() {
   const { pieceId } = Route.useParams();
+  const mode = Route.useSearch().mode ?? "follow";
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const runTranscribe = useServerFn(transcribePiece);
@@ -250,7 +253,29 @@ function PracticeStudio() {
           </div>
         </div>
 
-        {piece && (
+        <div className="mt-4 inline-flex rounded-full border border-border p-1 text-sm">
+          {([
+            ["follow", "原谱跟随"],
+            ["ai", "AI 识谱"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                if (value === "ai") setFollowerStop((n) => n + 1);
+                else player.pause();
+                void navigate({ to: ".", search: { mode: value }, replace: true });
+              }}
+              className={`rounded-full px-4 py-1 transition ${
+                mode === value ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {piece && mode === "follow" && (
           <ScoreFollower
             piece={piece}
             tempo={tempo}
@@ -267,7 +292,7 @@ function PracticeStudio() {
           <MusicBoxBallerina playing={player.playing || following} className="mt-6" />
         )}
 
-        {!piece?.abc_notation ? (
+        {mode === "follow" ? null : !piece?.abc_notation ? (
           <div className="surface-salon mt-8 rounded-xl p-10 text-center">
             <p className="text-muted-foreground">这首曲子还没有识谱。</p>
             <Button className="mt-4" onClick={transcribe} disabled={transcribing}>
