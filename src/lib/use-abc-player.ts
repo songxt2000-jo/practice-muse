@@ -150,7 +150,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
   );
 
   useEffect(() => {
-    if (!abc || !containerRef.current) return;
+    if (!abc || !containerEl) return;
     let disposed = false;
     setReady(false);
     setError(null);
