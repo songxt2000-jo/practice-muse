@@ -129,27 +129,86 @@ function BookPage() {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user!.id;
 
-      const rows = sorted.map((entry, index) => ({
-        user_id: uid,
-        book_id: bookId,
-        title: entry.title,
-        composer: entry.composer ?? book.composer,
-        era: entry.era,
-        mood: entry.mood,
-        key_signature: entry.keySignature,
-        start_page: entry.startPage,
-        end_page: entry.endPage ?? (sorted[index + 1]?.startPage ?? total + 1) - 1,
-        sort_order: index,
-      }));
+      // 合并模式：已经识过谱（abc_notation 非空）的曲目按页码范围对上就保留，
+      // 不删除、不重置，避免重复消耗 AI 识谱额度。
+      const { data: existingPieces } = await supabase
+        .from("pieces")
+        .select("id, start_page, end_page, abc_notation")
+        .eq("book_id", bookId);
+      const transcribed = (existingPieces ?? []).filter((p) => !!p.abc_notation);
+      const matchedIds = new Set<string>();
+      const overlaps = (
+        aStart: number,
+        aEnd: number,
+        bStart: number | null,
+        bEnd: number | null,
+      ) => {
+        const bs = bStart ?? aStart;
+        const be = bEnd ?? bs;
+        return aStart <= be && bs <= aEnd;
+      };
 
-      await supabase.from("pieces").delete().eq("book_id", bookId);
-      if (rows.length) {
-        const { error } = await supabase.from("pieces").insert(rows);
+      const insertRows: Array<{
+        user_id: string;
+        book_id: string;
+        title: string;
+        composer: string | null;
+        era: string | null;
+        mood: string | null;
+        key_signature: string | null;
+        start_page: number;
+        end_page: number;
+        sort_order: number;
+      }> = [];
+      const sortUpdates: Array<Promise<unknown>> = [];
+      let preserved = 0;
+
+      sorted.forEach((entry, index) => {
+        const endPage = entry.endPage ?? (sorted[index + 1]?.startPage ?? total + 1) - 1;
+        const hit = transcribed.find(
+          (p) => !matchedIds.has(p.id) && overlaps(entry.startPage, endPage, p.start_page, p.end_page),
+        );
+        if (hit) {
+          matchedIds.add(hit.id);
+          preserved += 1;
+          sortUpdates.push(
+            supabase.from("pieces").update({ sort_order: index }).eq("id", hit.id),
+          );
+        } else {
+          insertRows.push({
+            user_id: uid,
+            book_id: bookId,
+            title: entry.title,
+            composer: entry.composer ?? book.composer,
+            era: entry.era,
+            mood: entry.mood,
+            key_signature: entry.keySignature,
+            start_page: entry.startPage,
+            end_page: endPage,
+            sort_order: index,
+          });
+        }
+      });
+
+      // 没识过谱、又没被任何 AI 条目对上的旧条目（含手动未识谱的）按原逻辑替换掉。
+      const stale = (existingPieces ?? []).filter(
+        (p) => !matchedIds.has(p.id) && !p.abc_notation,
+      );
+      if (stale.length) {
+        await supabase.from("pieces").delete().in("id", stale.map((p) => p.id));
+      }
+      await Promise.all(sortUpdates);
+      if (insertRows.length) {
+        const { error } = await supabase.from("pieces").insert(insertRows);
         if (error) throw error;
       }
       await supabase.from("books").update({ scan_status: "ready" }).eq("id", bookId);
 
-      toast.success(`拆书完成，共识别 ${rows.length} 首曲目。`);
+      toast.success(
+        preserved > 0
+          ? `拆书完成，共识别 ${sorted.length} 首曲目，其中 ${preserved} 首已识谱的结果原样保留。`
+          : `拆书完成，共识别 ${sorted.length} 首曲目。`,
+      );
       void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
       void queryClient.invalidateQueries({ queryKey: ["book", bookId] });
     } catch (error) {
