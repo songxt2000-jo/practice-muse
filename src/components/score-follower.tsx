@@ -6,6 +6,7 @@ import { openBookSource, type BookSource } from "@/lib/book-pages";
 import { detectPage, finishLayout, type PageLayout } from "@/lib/score-layout";
 import { guessPickupBeats, listMeasures, locate, playOrder } from "@/lib/score-navigation";
 import { Button } from "@/components/ui/button";
+import { Metronome } from "@/components/metronome";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
