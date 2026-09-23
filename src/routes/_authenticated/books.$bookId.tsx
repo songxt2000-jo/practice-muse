@@ -165,9 +165,9 @@ function BookPage() {
     const start = Number(manualStart);
     const end = Number(manualEnd || manualStart);
     const title = manualTitle.trim();
-    if (!title) return toast.error("请先填写曲名");
+    if (!title) { toast.error("请先填写曲名"); return; }
     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || (total && end > total)) {
-      return toast.error(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`);
+      toast.error(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`);
     }
     setAdding(true);
     try {
