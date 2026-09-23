@@ -10,6 +10,7 @@ import { parseHumanNote, replaceRange, setDuration, shiftOctave, shiftSemitone, 
 import { PianoKeyboard } from "@/components/piano-keyboard";
 import { Metronome } from "@/components/metronome";
 import { MusicBoxBallerina } from "@/components/music-box-ballerina";
+import { ScoreFollower } from "@/components/score-follower";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,8 @@ function PracticeStudio() {
   const [hideTimer, setHideTimer] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
+  const [following, setFollowing] = useState(false);
+  const [followerStop, setFollowerStop] = useState(0);
   const startedAt = useRef(Date.now());
   const shellRef = useRef<HTMLDivElement | null>(null);
 
@@ -247,6 +250,23 @@ function PracticeStudio() {
           </div>
         </div>
 
+        {piece && (
+          <ScoreFollower
+            piece={piece}
+            tempo={tempo}
+            onTempoChange={setTempo}
+            onPlayingChange={(on) => {
+              setFollowing(on);
+              if (on) player.pause();
+            }}
+            stopSignal={followerStop}
+          />
+        )}
+
+        {focus && (
+          <MusicBoxBallerina playing={player.playing || following} className="mt-6" />
+        )}
+
         {!piece?.abc_notation ? (
           <div className="surface-salon mt-8 rounded-xl p-10 text-center">
             <p className="text-muted-foreground">这首曲子还没有识谱。</p>
@@ -418,12 +438,14 @@ function PracticeStudio() {
 
 
 
-            {focus && <MusicBoxBallerina playing={player.playing} className="mt-6" />}
-
             <div className="surface-salon mt-6 rounded-xl p-5">
               <div className="flex flex-wrap items-center gap-3">
                 <Button
-                  onClick={() => (player.playing ? player.pause() : void player.play())}
+                  onClick={() => {
+                    if (player.playing) return player.pause();
+                    setFollowerStop((n) => n + 1);
+                    void player.play();
+                  }}
                   disabled={!player.ready}
                 >
                   {player.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
