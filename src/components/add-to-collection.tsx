@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ListPlus, Plus } from "lucide-react";
+import { Check, ListPlus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/lib/i18n";
@@ -40,6 +40,15 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
   const collections = useCollections();
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
+  const flashTimer = useRef<number | null>(null);
+
+  function showFlash(name: string) {
+    setFlash(name);
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlash(null), 1900);
+  }
 
   async function toggle(collectionId: string, inIt: boolean, count: number) {
     setBusy(true);
