@@ -430,7 +430,18 @@ function BookPage() {
               ) : (
                 <>
                   <div>
-                    <p className="text-lg">{piece.title}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-lg">{piece.title}</p>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(piece)}
+                        aria-label={text("修改曲名和页码", "Edit title and pages")}
+                        title={text("修改曲名和页码", "Edit title and pages")}
+                        className="rounded-md p-1 text-muted-foreground/70 transition-colors hover:bg-primary/10 hover:text-primary"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {text(`第 ${piece.start_page}–${piece.end_page} 页`, `Pages ${piece.start_page}–${piece.end_page}`)}
                       {piece.mood ? ` · ${piece.mood}` : ""}
@@ -438,10 +449,6 @@ function BookPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <AddToCollection pieceId={piece.id} />
-                    <Button size="sm" variant="ghost" onClick={() => startEdit(piece)} aria-label={text("修改曲名和页码", "Edit title and pages")}>
-                      <Pencil className="size-4" />
-                      {text("修改", "Edit")}
-                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => deletePiece(piece)} aria-label={text("删除曲目", "Delete piece")}>
                       <Trash2 className="size-4" />
                     </Button>
