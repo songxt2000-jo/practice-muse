@@ -454,6 +454,7 @@ export function FollowerCore({
           beatsPerBar={settings.beatsPerMeasure}
           syncBeat={Math.floor(beat)}
           syncing={playing}
+          forceSound={counting}
         />
 
         <div className="flex items-center gap-1.5" aria-label={text("拍点", "Beats")}>
