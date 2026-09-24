@@ -224,14 +224,15 @@ function PracticeStudio() {
   }
 
   return (
-    <div
-      ref={shellRef}
-      className={`min-h-screen bg-background px-5 py-6 ${
-        focus ? "h-screen overflow-y-auto" : ""
-      }`}
-    >
+    <>
       {!focus && <SiteHeader authenticated />}
-      <div className="mx-auto max-w-5xl">
+      <div
+        ref={shellRef}
+        className={`min-h-screen bg-background px-5 py-6 ${
+          focus ? "h-screen overflow-y-auto" : ""
+        }`}
+      >
+        <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl">{piece?.title}</h1>
@@ -586,8 +587,8 @@ function PracticeStudio() {
             </Collapsible>
           </>
         )}
+        </div>
       </div>
-
-    </div>
+    </>
   );
 }

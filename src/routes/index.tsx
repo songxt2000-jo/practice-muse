@@ -33,7 +33,7 @@ function Landing() {
       <SiteHeader />
       <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-6 py-16 text-center">
         <p className="text-xs uppercase tracking-[0.4em] text-primary">Piano Practice Studio</p>
-        <h1 className="mt-6 max-w-3xl text-5xl leading-tight md:text-6xl">
+        <h1 className="mt-6 max-w-3xl text-4xl leading-tight sm:text-5xl md:text-6xl">
           {text("把整本琴谱，变成会发声的练习室", "Turn every score into an interactive practice room")}
         </h1>
         <p className="mt-6 max-w-xl text-muted-foreground">
