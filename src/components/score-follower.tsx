@@ -224,6 +224,7 @@ export function FollowerCore({
     notify(false);
     setStartStep(0);
     setBeat(steps[0]?.startBeat ?? 0);
+    setViewHalf(0);
   }, [notify, steps]);
 
   // Keep the cursor in place when the tempo changes mid-play.
