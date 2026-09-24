@@ -29,11 +29,15 @@ import {
   Loader2,
   Maximize2,
   Minimize2,
+  Minus,
+  MoreHorizontal,
   Pause,
   Play,
   Pencil,
+  Plus,
   Repeat,
   Save,
+  SkipBack,
   Square,
   Undo2,
   Wand2,
@@ -76,6 +80,7 @@ function PracticeStudio() {
   const [elapsed, setElapsed] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
   const [following, setFollowing] = useState(false);
+  const [focusMoreOpen, setFocusMoreOpen] = useState(false);
   const [followerStop, setFollowerStop] = useState(0);
   const [followPos, setFollowPos] = useState<{ measure: number | null; total: number }>({ measure: null, total: 0 });
   const onFollowPosition = useCallback((measure: number | null, total: number) => setFollowPos({ measure, total }), []);
@@ -235,6 +240,7 @@ function PracticeStudio() {
   }, []);
 
   const focusFollow = focus && mode === "follow";
+  const focusAi = focus && mode === "ai";
   const shownMeasure = mode === "follow" ? followPos.measure : player.measure + 1;
   const totalMeasures = mode === "follow" ? followPos.total : player.measureCount;
 
@@ -248,11 +254,9 @@ function PracticeStudio() {
       <div
         ref={shellRef}
         className={
-          focusFollow
+          focus
             ? "focus-room flex h-[100dvh] flex-col"
-            : focus
-              ? "focus-room h-[100dvh] overflow-y-auto"
-              : "min-h-screen bg-background px-5 py-6"
+            : "min-h-screen bg-background px-5 py-6"
         }
       >
         {focus && (
@@ -285,7 +289,7 @@ function PracticeStudio() {
             )}
           </header>
         )}
-        <div className={focusFollow ? "flex min-h-0 flex-1 flex-col" : focus ? "mx-auto max-w-5xl px-5 py-6" : "mx-auto max-w-5xl"}>
+        <div className={focus ? "flex min-h-0 flex-1 flex-col" : "mx-auto max-w-5xl"}>
         <div className={focus ? "hidden" : "flex flex-wrap items-start justify-between gap-4"}>
           <div>
             <h1 className="text-3xl">{piece?.title}</h1>
@@ -370,11 +374,103 @@ function PracticeStudio() {
           />
         )}
 
-        {focus && !focusFollow && (
-          <MusicBoxBallerina playing={player.playing || following} className="mt-6" />
+        {focusAi && piece?.abc_notation && (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+              <div className="relative mx-auto max-w-3xl overflow-hidden rounded-md bg-[var(--fr-paper)] shadow-[0_1px_2px_rgba(30,42,50,.08),0_12px_32px_rgba(30,42,50,.08)]">
+                <div className="overflow-hidden px-3 py-2 sm:px-5">
+                  <div ref={player.containerRef} className="transition-transform duration-500" />
+                </div>
+                {player.error && <p className="p-4 text-sm text-destructive">{player.error}</p>}
+              </div>
+              {player.pageCount > 1 && !player.playing && (
+                <div className="mt-3 flex items-center justify-center gap-3 text-xs text-[var(--fr-muted)]">
+                  <button
+                    type="button"
+                    className="flex size-12 items-center justify-center rounded-full border border-[var(--fr-line)] bg-[var(--fr-paper)] disabled:opacity-40"
+                    disabled={player.page === 0}
+                    onClick={() => player.goToPage(player.page - 1)}
+                    aria-label={text("上一页", "Previous page")}
+                  >
+                    <ChevronLeft className="size-5" />
+                  </button>
+                  {text(`第 ${player.page + 1} / ${player.pageCount} 页`, `Page ${player.page + 1} / ${player.pageCount}`)}
+                  <button
+                    type="button"
+                    className="flex size-12 items-center justify-center rounded-full border border-[var(--fr-line)] bg-[var(--fr-paper)] disabled:opacity-40"
+                    disabled={player.page >= player.pageCount - 1}
+                    onClick={() => player.goToPage(player.page + 1)}
+                    aria-label={text("下一页", "Next page")}
+                  >
+                    <ChevronRight className="size-5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {focusMoreOpen && (
+              <div className="border-t border-[var(--fr-line)] bg-[var(--fr-bar)] px-6 py-4">
+                <div className="mx-auto grid max-w-3xl gap-5 md:grid-cols-2">
+                  <div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2"><Repeat className="size-4" /> {text("选段循环 (AB)", "Section loop (AB)")}</span>
+                      <Switch checked={loopOn} onCheckedChange={setLoopOn} />
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <Input type="number" min={1} value={loopFrom} onChange={(e) => setLoopFrom(Number(e.target.value))} className="w-20" />
+                      <span className="text-sm text-[var(--fr-muted)]">{text("至", "to")}</span>
+                      <Input type="number" min={1} value={loopTo} onChange={(e) => setLoopTo(Number(e.target.value))} className="w-20" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch id="focus-hide-timer" checked={hideTimer} onCheckedChange={setHideTimer} />
+                    <Label htmlFor="focus-hide-timer">{text("隐藏计时器", "Hide timer")}</Label>
+                  </div>
+                  <div className="md:col-span-2"><PianoKeyboard active={player.activeMidi} /></div>
+                </div>
+              </div>
+            )}
+
+            <footer className="flex items-center gap-5 border-t border-[var(--fr-line)] bg-[var(--fr-bar)] px-6 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
+              <button
+                type="button"
+                onClick={() => {
+                  if (player.playing) player.pause();
+                  else {
+                    setFollowerStop((n) => n + 1);
+                    void player.play();
+                  }
+                }}
+                disabled={!player.ready}
+                aria-label={player.playing ? text("暂停", "Pause") : text("播放", "Play")}
+                className="flex size-[76px] shrink-0 items-center justify-center rounded-full bg-[var(--fr-ink)] text-[var(--fr-gold)] disabled:opacity-40"
+              >
+                {player.playing ? <Pause className="size-7 fill-current" /> : <Play className="ml-1 size-7 fill-current" />}
+              </button>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-xs text-[var(--fr-muted)]">{text("速度", "Tempo")}</span>
+                <div className="flex items-center gap-1">
+                  <button type="button" className="flex size-12 items-center justify-center rounded-full border border-[var(--fr-line)] bg-[var(--fr-paper)]" onClick={() => setTempo((value) => Math.max(40, value - 2))} aria-label={text("减慢", "Slower")}><Minus className="size-5" /></button>
+                  <span className="w-16 text-center text-2xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>♩{tempo}</span>
+                  <button type="button" className="flex size-12 items-center justify-center rounded-full border border-[var(--fr-line)] bg-[var(--fr-paper)]" onClick={() => setTempo((value) => Math.min(208, value + 2))} aria-label={text("加快", "Faster")}><Plus className="size-5" /></button>
+                </div>
+              </div>
+
+              <div className="hidden items-center gap-1.5 sm:flex" aria-label={text("拍点", "Beats")}>
+                {Array.from({ length: 4 }, (_, index) => (
+                  <span key={index} className={`size-3 rounded-full border ${player.playing && player.beat % 4 === index ? "border-amber-400 bg-amber-400" : "border-[var(--fr-line)]"}`} />
+                ))}
+              </div>
+              <Metronome bpm={tempo} syncBeat={player.beat} syncing={player.playing} />
+              <div className="flex-1" />
+              <button type="button" className="flex size-12 items-center justify-center rounded-full border border-[var(--fr-line)] bg-[var(--fr-paper)]" onClick={player.stop} aria-label={text("回到起点", "Restart")}><SkipBack className="size-5" /></button>
+              <button type="button" className="flex size-12 items-center justify-center rounded-full border border-[var(--fr-line)] bg-[var(--fr-paper)]" onClick={() => setFocusMoreOpen((open) => !open)} aria-expanded={focusMoreOpen} aria-label={text("更多设置", "More settings")}><MoreHorizontal className="size-5" /></button>
+            </footer>
+          </div>
         )}
 
-        {mode === "follow" ? null : !piece?.abc_notation ? (
+        {mode === "follow" || focusAi ? null : !piece?.abc_notation ? (
           <div className="surface-salon mt-8 rounded-xl p-10 text-center">
             <p className="text-muted-foreground">{text("这首曲子还没有识谱。", "This piece has not been transcribed yet.")}</p>
             <Button className="mt-4" onClick={transcribe} disabled={transcribing}>

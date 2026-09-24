@@ -545,13 +545,6 @@ export function FollowerCore({
         {moreOpen && (
           <div className="border-t border-[var(--fr-line)] bg-[var(--fr-bar)] px-6 py-4">
             <div className="mx-auto flex max-w-3xl flex-col gap-4">
-              <Metronome
-                bpm={tempo}
-                beatsPerBar={settings.beatsPerMeasure}
-                syncBeat={Math.floor(beat)}
-                syncing={playing}
-                forceSound={counting}
-              />
               {settingsPanel}
             </div>
           </div>
@@ -584,6 +577,13 @@ export function FollowerCore({
           </div>
 
           <div className="hidden sm:block">{beatDots}</div>
+          <Metronome
+            bpm={tempo}
+            beatsPerBar={settings.beatsPerMeasure}
+            syncBeat={Math.floor(beat)}
+            syncing={playing}
+            forceSound={counting}
+          />
           <div className="flex-1" />
 
           <button type="button" className={round} onClick={rewind} disabled={!steps.length} aria-label={text("回到起点", "Restart")}>
