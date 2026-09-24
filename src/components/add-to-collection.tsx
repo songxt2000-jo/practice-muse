@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ListPlus, Plus } from "lucide-react";
+import { Check, ListPlus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/lib/i18n";
@@ -40,8 +40,17 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
   const collections = useCollections();
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [flash, setFlash] = useState<string | null>(null);
+  const flashTimer = useRef<number | null>(null);
 
-  async function toggle(collectionId: string, inIt: boolean, count: number) {
+  function showFlash(name: string) {
+    setFlash(name);
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlash(null), 1900);
+  }
+
+  async function toggle(collectionId: string, name: string, inIt: boolean, count: number) {
     setBusy(true);
     try {
       if (inIt) {
@@ -63,6 +72,10 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
       }
       await qc.invalidateQueries({ queryKey: ["collections"] });
       void qc.invalidateQueries({ queryKey: ["collection", collectionId] });
+      if (!inIt) {
+        setOpen(false);
+        showFlash(name);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : text("操作失败", "Something went wrong"));
     } finally {
@@ -77,8 +90,7 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
     try {
       const id = await createCollection(name);
       setNewName("");
-      await toggle(id, false, 0);
-      toast.success(text(`已加入「${name}」`, `Added to “${name}”`));
+      await toggle(id, name, false, 0);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : text("创建失败", "Could not create"));
       setBusy(false);
@@ -86,46 +98,56 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
   }
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button size="sm" variant="ghost" aria-label={text("加入自建曲集", "Add to my collection")}>
-          <ListPlus className="size-4" />
-          {text("加入曲集", "Add to set")}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64" align="end">
-        <p className="text-sm font-medium">{text("加入自建曲集", "Add to my collection")}</p>
-        <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
-          {collections.data?.length === 0 && (
-            <p className="text-xs text-muted-foreground">{text("还没有自建曲集，在下面新建一个。", "No collections yet — create one below.")}</p>
-          )}
-          {collections.data?.map((c) => {
-            const inIt = c.collection_items.some((i) => i.piece_id === pieceId);
-            return (
-              <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                <Checkbox
-                  checked={inIt}
-                  disabled={busy}
-                  onCheckedChange={() => toggle(c.id, inIt, c.collection_items.length)}
-                />
-                <span className="truncate">{c.name}</span>
-              </label>
-            );
-          })}
-        </div>
-        <div className="mt-3 flex gap-2 border-t border-border pt-3">
-          <Input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && createAndAdd()}
-            placeholder={text("新曲集名称", "New collection name")}
-            className="h-8"
-          />
-          <Button size="sm" onClick={createAndAdd} disabled={busy || !newName.trim()} aria-label={text("新建并加入", "Create and add")}>
-            <Plus className="size-4" />
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="ghost" aria-label={text("加入自建曲集", "Add to my collection")}>
+            <ListPlus className="size-4" />
+            {text("加入曲集", "Add to set")}
           </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-64" align="end">
+          <p className="text-sm font-medium">{text("加入自建曲集", "Add to my collection")}</p>
+          <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
+            {collections.data?.length === 0 && (
+              <p className="text-xs text-muted-foreground">{text("还没有自建曲集，在下面新建一个。", "No collections yet — create one below.")}</p>
+            )}
+            {collections.data?.map((c) => {
+              const inIt = c.collection_items.some((i) => i.piece_id === pieceId);
+              return (
+                <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={inIt}
+                    disabled={busy}
+                    onCheckedChange={() => toggle(c.id, c.name, inIt, c.collection_items.length)}
+                  />
+                  <span className="truncate">{c.name}</span>
+                </label>
+              );
+            })}
+          </div>
+          <div className="mt-3 flex gap-2 border-t border-border pt-3">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && createAndAdd()}
+              placeholder={text("新曲集名称", "New collection name")}
+              className="h-8"
+            />
+            <Button size="sm" onClick={createAndAdd} disabled={busy || !newName.trim()} aria-label={text("新建并加入", "Create and add")}>
+              <Plus className="size-4" />
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+      {flash && (
+        <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="center-flash-pill flex items-center gap-2 rounded-full border border-primary/30 bg-primary/95 px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg">
+            <Check className="size-4" />
+            {text(`已添加到「${flash}」`, `Added to “${flash}”`)}
+          </div>
         </div>
-      </PopoverContent>
-    </Popover>
+      )}
+    </>
   );
 }

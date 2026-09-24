@@ -146,3 +146,13 @@
   stroke: oklch(0.58 0.16 245);
   stroke-width: 2;
 }
+
+@keyframes center-flash {
+  0% { opacity: 0; transform: scale(0.88); }
+  14% { opacity: 1; transform: scale(1); }
+  72% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+.center-flash-pill {
+  animation: center-flash 1.9s ease forwards;
+}
