@@ -61,14 +61,14 @@ function CollectionPage() {
 
   async function remove(id: string) {
     const { error } = await supabase.from("collection_items").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     refresh();
   }
 
   async function deleteCollection() {
     if (!window.confirm(text("确定删除这个自建曲集吗？曲目本身不会被删除。", "Delete this collection? The pieces themselves will be kept."))) return;
     const { error } = await supabase.from("collections").delete().eq("id", collectionId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     void qc.invalidateQueries({ queryKey: ["collections"] });
     navigate({ to: "/archive" });
   }
