@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Languages } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 export function SiteHeader({ authenticated = false }: { authenticated?: boolean }) {
   const { language, setLanguage, text } = useLanguage();
   const navigate = useNavigate();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const showBack = authenticated && pathname !== "/archive";
