@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { ChevronLeft, ChevronRight, Loader2, Pause, Play, RotateCcw, Square } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 /** What we keep in `pieces.score_layout`. Bump `version` when the shape changes. */
 type StoredLayout = {
@@ -56,6 +57,7 @@ function readStored(value: unknown): StoredLayout | null {
 
 /** Loads the piece's book and keeps the detected layout on the piece row. */
 export function ScoreFollower({ piece, ...rest }: Props) {
+  const { text } = useLanguage();
   const queryClient = useQueryClient();
   const firstPage = piece.start_page ?? 1;
   const lastPage = piece.end_page ?? firstPage;
@@ -69,7 +71,7 @@ export function ScoreFollower({ piece, ...rest }: Props) {
         .select("storage_path, source_type")
         .eq("id", piece.book_id!)
         .single();
-      if (error || !data?.storage_path) throw new Error("找不到曲集文件");
+      if (error || !data?.storage_path) throw new Error(text("找不到曲集文件", "Collection file not found"));
       return openBookSource(data.storage_path, data.source_type);
     },
     staleTime: Infinity,
@@ -116,6 +118,7 @@ export function FollowerCore({
   onPlayingChange,
   stopSignal,
 }: CoreProps) {
+  const { text } = useLanguage();
   const onPlayingRef = useRef(onPlayingChange);
   onPlayingRef.current = onPlayingChange;
   const notify = useCallback((on: boolean) => onPlayingRef.current?.(on), []);
@@ -142,7 +145,7 @@ export function FollowerCore({
         }
         const pages = finishLayout(detected);
         const measures = listMeasures(pages);
-        if (!measures.length) throw new Error("没在这几页上找到五线谱小节");
+        if (!measures.length) throw new Error(text("没在这几页上找到五线谱小节", "No staff measures were found on these pages"));
         const layout: StoredLayout = {
           version: 1,
           pages,
@@ -151,7 +154,7 @@ export function FollowerCore({
         setStored(layout);
         onSaveRef.current(layout);
       } catch (err) {
-        setDetectError(err instanceof Error ? err.message : "读谱面失败");
+        setDetectError(err instanceof Error ? err.message : text("读谱面失败", "Could not read the score"));
       } finally {
         detectingRef.current = false;
         setDetecting(false);
@@ -305,19 +308,19 @@ export function FollowerCore({
     <div className="surface-salon mt-6 rounded-xl p-4">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-lg" style={{ fontFamily: "var(--font-display)" }}>
-          原谱跟随
+          {text("原谱跟随", "Follow original")}
         </span>
         <span className="text-xs text-muted-foreground">
-          光标按拍子走在你的原谱上，不用 AI
+          {text("光标按拍子走在你的原谱上，不用 AI", "A beat-synced cursor follows your original score without AI")}
         </span>
       </div>
 
       <div className="score-sheet relative mt-4 overflow-hidden rounded-lg">
         {images[viewPage] ? (
-          <img src={images[viewPage]} alt={`第 ${viewPage} 页`} className="block w-full select-none" draggable={false} />
+          <img src={images[viewPage]} alt={text(`第 ${viewPage} 页`, `Page ${viewPage}`)} className="block w-full select-none" draggable={false} />
         ) : (
           <div className="flex h-96 items-center justify-center text-sm text-muted-foreground">
-            <Loader2 className="mr-2 size-4 animate-spin" /> 正在打开第 {viewPage} 页…
+            <Loader2 className="mr-2 size-4 animate-spin" /> {text(`正在打开第 ${viewPage} 页…`, `Opening page ${viewPage}…`)}
           </div>
         )}
 
@@ -331,7 +334,7 @@ export function FollowerCore({
                   key={m.index}
                   type="button"
                   onClick={() => jumpTo(m.index)}
-                  title={`从第 ${printedNumber(m.index)} 小节开始`}
+                  title={text(`从第 ${printedNumber(m.index)} 小节开始`, `Start from measure ${printedNumber(m.index)}`)}
                   className={`absolute rounded-sm transition-colors ${
                     active ? "bg-amber-400/20" : "hover:bg-amber-400/10"
                   }`}
@@ -361,7 +364,7 @@ export function FollowerCore({
           <div className="absolute inset-x-0 bottom-0 bg-background/85 p-3 text-center text-sm">
             {detecting ? (
               <span className="inline-flex items-center gap-2 text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" /> 正在找小节线…
+                <Loader2 className="size-4 animate-spin" /> {text("正在找小节线…", "Finding bar lines…")}
               </span>
             ) : (
               <span className="text-destructive">{detectError}</span>
@@ -376,7 +379,7 @@ export function FollowerCore({
             <ChevronLeft className="size-4" />
           </Button>
           <span className="text-xs text-muted-foreground">
-            第 {viewPage} 页 · 共 {firstPage}–{lastPage} 页
+            {text(`第 ${viewPage} 页 · 共 ${firstPage}–${lastPage} 页`, `Page ${viewPage} · Range ${firstPage}–${lastPage}`)}
           </span>
           <Button variant="ghost" size="sm" disabled={viewPage >= lastPage || playing} onClick={() => setViewPage(viewPage + 1)}>
             <ChevronRight className="size-4" />
@@ -387,11 +390,11 @@ export function FollowerCore({
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Button onClick={() => (playing ? pause() : resume())} disabled={!steps.length}>
           {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
-          {playing ? "暂停" : "开始"}
+          {playing ? text("暂停", "Pause") : text("开始", "Start")}
         </Button>
         <Button variant="secondary" onClick={rewind} disabled={!steps.length}>
           <Square className="size-4" />
-          回到起点
+          {text("回到起点", "Restart")}
         </Button>
 
         <Metronome
@@ -401,7 +404,7 @@ export function FollowerCore({
           syncing={playing}
         />
 
-        <div className="flex items-center gap-1.5" aria-label="拍点">
+        <div className="flex items-center gap-1.5" aria-label={text("拍点", "Beats")}>
           {Array.from({ length: settings.beatsPerMeasure }, (_, i) => (
             <span
               key={i}
@@ -419,16 +422,16 @@ export function FollowerCore({
         </div>
         <span className="text-xs tabular-nums text-muted-foreground">
           {counting
-            ? "预备拍…"
+            ? text("预备拍…", "Count-in…")
             : measure
-              ? `第 ${printedNumber(measure.index)} 小节${measure.volta ? `（第 ${measure.volta} 房子）` : ""}`
-              : `${tempo} BPM · 点谱面上任意小节从那里开始`}
+              ? text(`第 ${printedNumber(measure.index)} 小节${measure.volta ? `（第 ${measure.volta} 房子）` : ""}`, `Measure ${printedNumber(measure.index)}${measure.volta ? ` (ending ${measure.volta})` : ""}`)
+              : text(`${tempo} BPM · 点谱面上任意小节从那里开始`, `${tempo} BPM · Select any measure to start there`)}
         </span>
       </div>
 
       <div className="mt-4 max-w-md">
         <div className="flex items-center justify-between text-sm">
-          <span>速度</span>
+          <span>{text("速度", "Tempo")}</span>
           <span className="tabular-nums text-primary">{tempo} BPM</span>
         </div>
         <Slider
@@ -443,7 +446,7 @@ export function FollowerCore({
 
       <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-4 text-sm">
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">每小节</span>
+          <span className="text-muted-foreground">{text("每小节", "Meter")}</span>
           {METERS.map((n) => (
             <Button
               key={n}
@@ -457,11 +460,11 @@ export function FollowerCore({
               {n}
             </Button>
           ))}
-          <span className="text-muted-foreground">拍</span>
+          <span className="text-muted-foreground">{text("拍", "beats")}</span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">弱起</span>
+          <span className="text-muted-foreground">{text("弱起", "Pickup")}</span>
           <Button
             size="sm"
             variant="secondary"
@@ -471,7 +474,7 @@ export function FollowerCore({
             −
           </Button>
           <span className="w-14 text-center tabular-nums">
-            {settings.pickupBeats ? `${settings.pickupBeats} 拍` : "没有"}
+            {settings.pickupBeats ? text(`${settings.pickupBeats} 拍`, `${settings.pickupBeats} beats`) : text("没有", "None")}
           </span>
           <Button
             size="sm"
@@ -490,7 +493,7 @@ export function FollowerCore({
             disabled={!stored}
             onCheckedChange={(on) => updateSettings({ countIn: on })}
           />
-          <Label htmlFor="count-in">先数一小节预备拍</Label>
+          <Label htmlFor="count-in">{text("先数一小节预备拍", "Count in one measure")}</Label>
         </div>
 
         <Button
@@ -505,10 +508,10 @@ export function FollowerCore({
             setBeat(0);
             setAttempt((n) => n + 1);
           }}
-          title="重新识别这几页的小节线"
+          title={text("重新识别这几页的小节线", "Detect bar lines again")}
         >
           <RotateCcw className="size-4" />
-          重新找小节线
+          {text("重新找小节线", "Detect bar lines")}
         </Button>
       </div>
     </div>
