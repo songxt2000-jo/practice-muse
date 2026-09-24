@@ -6,9 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { SiteHeader } from "@/components/site-header";
+import { useLanguage, useLocalizedDocumentTitle } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { mode?: "signin" | "signup" } =>
+    search["mode"] === "signup" || search["mode"] === "signin" ? { mode: search["mode"] } : {},
   head: () => ({
     meta: [
       { title: "登录 · 琴谱工作台" },
@@ -24,10 +28,17 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const searchMode = Route.useSearch().mode;
+  const [mode, setMode] = useState<"signin" | "signup">(searchMode ?? "signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const { text } = useLanguage();
+  useLocalizedDocumentTitle("登录 · 琴谱工作台", "Sign in · Piano Workbench");
+
+  useEffect(() => {
+    if (searchMode) setMode(searchMode);
+  }, [searchMode]);
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data }) => {
@@ -47,7 +58,7 @@ function AuthPage() {
         });
         if (error) throw error;
         if (!data.session) {
-          toast.success("注册成功，请到邮箱点击确认链接后登录。");
+          toast.success(text("注册成功，请到邮箱点击确认链接后登录。", "Account created. Confirm your email, then sign in."));
           setMode("signin");
           return;
         }
@@ -58,7 +69,7 @@ function AuthPage() {
         navigate({ to: "/archive" });
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "操作失败");
+      toast.error(error instanceof Error ? error.message : text("操作失败", "Something went wrong"));
     } finally {
       setBusy(false);
     }
@@ -69,7 +80,7 @@ function AuthPage() {
       redirect_uri: window.location.origin,
     });
     if (result.error) {
-      toast.error("Google 登录失败，请稍后再试。");
+      toast.error(text("Google 登录失败，请稍后再试。", "Google sign-in failed. Please try again."));
       return;
     }
     if (result.redirected) return;
@@ -77,19 +88,19 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-16">
+    <div className="min-h-screen">
+      <SiteHeader />
+      <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
       <div className="surface-salon w-full max-w-md rounded-2xl p-8">
-        <Link to="/" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          琴谱工作台
-        </Link>
-        <h1 className="mt-3 text-3xl">{mode === "signin" ? "回到琴房" : "创建你的琴房"}</h1>
+        <Link to="/" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Piano Workbench</Link>
+        <h1 className="mt-3 text-3xl">{mode === "signin" ? text("回到琴房", "Welcome back") : text("创建你的琴房", "Create your studio")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          上传曲集、拆分曲目、进入练习室。
+          {text("上传曲集、拆分曲目、进入练习室。", "Upload scores, organize pieces, and begin practicing.")}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">邮箱</Label>
+            <Label htmlFor="email">{text("邮箱", "Email")}</Label>
             <Input
               id="email"
               type="email"
@@ -99,7 +110,7 @@ function AuthPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">密码</Label>
+            <Label htmlFor="password">{text("密码", "Password")}</Label>
             <Input
               id="password"
               type="password"
@@ -110,18 +121,18 @@ function AuthPage() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
-            {mode === "signin" ? "登录" : "注册"}
+            {mode === "signin" ? text("登录", "Log in") : text("注册", "Sign up")}
           </Button>
         </form>
 
         <div className="my-5 flex items-center gap-3 text-xs text-muted-foreground">
           <span className="h-px flex-1 bg-border" />
-          或
+          {text("或", "or")}
           <span className="h-px flex-1 bg-border" />
         </div>
 
         <Button variant="secondary" className="w-full" onClick={handleGoogle}>
-          使用 Google 账号继续
+          {text("使用 Google 账号继续", "Continue with Google")}
         </Button>
 
         <button
@@ -129,9 +140,10 @@ function AuthPage() {
           className="mt-6 w-full text-sm text-muted-foreground underline-offset-4 hover:underline"
           onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
         >
-          {mode === "signin" ? "还没有账号？立即注册" : "已有账号？直接登录"}
+          {mode === "signin" ? text("还没有账号？立即注册", "New here? Create an account") : text("已有账号？直接登录", "Already have an account? Log in")}
         </button>
       </div>
+      </main>
     </div>
   );
 }
