@@ -178,17 +178,36 @@ export function FollowerCore({
 
   // Page images shown to the player, pen annotations included.
   const [images, setImages] = useState<Record<number, string>>({});
-  const [viewPage, setViewPage] = useState(firstPage);
+  /** Zero-based half-page in this piece: page 1 top, page 1 bottom, page 2 top… */
+  const [viewHalf, setViewHalf] = useState(0);
+  const halfCount = Math.max(1, (lastPage - firstPage + 1) * 2);
+  const halfPage = useCallback((half: number) => firstPage + Math.floor(half / 2), [firstPage]);
+  const visibleHalves = useMemo<[number, number]>(() => {
+    const current = Math.max(0, Math.min(viewHalf, halfCount - 1));
+    if (current % 2 === 0) return [current, Math.min(current + 1, halfCount - 1)];
+    // While playing a lower half, replace the already-read upper pane with the
+    // next page opening. The lower pane remains stable until it has been played.
+    return current + 1 < halfCount ? [current + 1, current] : [Math.max(0, current - 1), current];
+  }, [viewHalf, halfCount]);
+  const neededPages = useMemo(() => {
+    const pages = visibleHalves.map(halfPage);
+    const followingPage = Math.max(...pages) + 1;
+    if (followingPage <= lastPage) pages.push(followingPage);
+    return Array.from(new Set(pages));
+  }, [visibleHalves, halfPage, lastPage]);
   useEffect(() => {
-    if (!source || images[viewPage]) return;
+    if (!source) return;
     let cancelled = false;
-    source.renderPage(viewPage, DISPLAY_WIDTH).then((url) => {
-      if (!cancelled) setImages((prev) => ({ ...prev, [viewPage]: url }));
-    });
+    for (const page of neededPages) {
+      if (images[page]) continue;
+      source.renderPage(page, DISPLAY_WIDTH).then((url) => {
+        if (!cancelled) setImages((prev) => ({ ...prev, [page]: url }));
+      });
+    }
     return () => {
       cancelled = true;
     };
-  }, [source, viewPage, images]);
+  }, [source, neededPages, images]);
 
   // ---- clock ----
   const [playing, setPlaying] = useState(false);
@@ -205,6 +224,7 @@ export function FollowerCore({
     notify(false);
     setStartStep(0);
     setBeat(steps[0]?.startBeat ?? 0);
+    setViewHalf(0);
   }, [notify, steps]);
 
   // Keep the cursor in place when the tempo changes mid-play.
@@ -281,17 +301,27 @@ export function FollowerCore({
       ? Math.floor(beat - step.startBeat)
       : -1;
 
-  // Follow the cursor across pages while playing.
+  const measureHalf = useCallback(
+    (m: (typeof measures)[number]) => (m.page - firstPage) * 2 + ((m.top + m.bottom) / 2 >= 0.5 ? 1 : 0),
+    [firstPage],
+  );
+
+  // Follow by half-pages. As soon as the cursor enters a lower half, the upper
+  // pane reveals the next page opening, several systems before it is needed.
   useEffect(() => {
-    if (playing && measure && measure.page !== viewPage) setViewPage(measure.page);
+    if (playing && measure) {
+      const target = measureHalf(measure);
+      if (target !== viewHalf) setViewHalf(target);
+    }
     if (counting) {
       const target = measures[steps[startStep]!.measure];
-      if (target && target.page !== viewPage) setViewPage(target.page);
+      if (target) {
+        const targetHalf = measureHalf(target);
+        if (targetHalf !== viewHalf) setViewHalf(targetHalf);
+      }
     }
-  }, [playing, measure, viewPage, counting, measures, steps, startStep]);
+  }, [playing, measure, viewHalf, counting, measures, steps, startStep, measureHalf]);
 
-  const pageLayout = stored?.pages.find((p) => p.page === viewPage);
-  const pageMeasures = measures.filter((m) => m.page === viewPage);
   const pickupShown = settings.pickupBeats > 0;
   const printedNumber = (index: number) => (pickupShown ? index : index + 1);
 
@@ -316,49 +346,71 @@ export function FollowerCore({
       </div>
 
       <div className="score-sheet relative mt-4 overflow-hidden rounded-lg">
-        {images[viewPage] ? (
-          <img src={images[viewPage]} alt={text(`第 ${viewPage} 页`, `Page ${viewPage}`)} className="block w-full select-none" draggable={false} />
-        ) : (
-          <div className="flex h-96 items-center justify-center text-sm text-muted-foreground">
-            <Loader2 className="mr-2 size-4 animate-spin" /> {text(`正在打开第 ${viewPage} 页…`, `Opening page ${viewPage}…`)}
-          </div>
-        )}
-
-        {images[viewPage] && pageLayout && (
-          <div className="absolute inset-0">
-            {pageMeasures.map((m) => {
-              const pad = (m.bottom - m.top) * 0.18;
-              const active = measure?.index === m.index;
-              return (
-                <button
-                  key={m.index}
-                  type="button"
-                  onClick={() => jumpTo(m.index)}
-                  title={text(`从第 ${printedNumber(m.index)} 小节开始`, `Start from measure ${printedNumber(m.index)}`)}
-                  className={`absolute rounded-sm transition-colors ${
-                    active ? "bg-amber-400/20" : "hover:bg-amber-400/10"
-                  }`}
-                  style={{
-                    left: `${m.left * 100}%`,
-                    width: `${(m.right - m.left) * 100}%`,
-                    top: `${(m.top - pad) * 100}%`,
-                    height: `${(m.bottom - m.top + pad * 2) * 100}%`,
-                  }}
-                />
-              );
-            })}
-            {measure && here && measure.page === viewPage && (
+        <div className="grid gap-px bg-border">
+          {visibleHalves.map((half, slot) => {
+            const page = halfPage(half);
+            const lower = half % 2 === 1;
+            const pageLayout = stored?.pages.find((item) => item.page === page);
+            const halfMeasures = measures.filter(
+              (m) => m.page === page && ((m.top + m.bottom) / 2 >= 0.5) === lower,
+            );
+            return (
               <div
-                className="pointer-events-none absolute w-[3px] rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]"
-                style={{
-                  left: `${(measure.left + (measure.right - measure.left) * here.progress) * 100}%`,
-                  top: `${(measure.top - (measure.bottom - measure.top) * 0.12) * 100}%`,
-                  height: `${(measure.bottom - measure.top) * 1.24 * 100}%`,
-                }}
-              />
-            )}
-          </div>
-        )}
+                key={`${slot}-${half}`}
+                className="relative overflow-hidden bg-score"
+                style={{ aspectRatio: pageLayout ? `${2 / pageLayout.aspect}` : "1.42" }}
+              >
+                {images[page] ? (
+                  <img
+                    src={images[page]}
+                    alt={text(`第 ${page} 页${lower ? "下半页" : "上半页"}`, `Page ${page}, ${lower ? "lower" : "upper"} half`)}
+                    className="absolute left-0 w-full max-w-none select-none"
+                    style={{ top: lower ? "-100%" : "0" }}
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    <Loader2 className="mr-2 !size-4 animate-spin" /> {text(`正在打开第 ${page} 页…`, `Opening page ${page}…`)}
+                  </div>
+                )}
+
+                {images[page] && pageLayout && (
+                  <div className="absolute inset-0">
+                    {halfMeasures.map((m) => {
+                      const pad = (m.bottom - m.top) * 0.18;
+                      const active = measure?.index === m.index;
+                      return (
+                        <button
+                          key={m.index}
+                          type="button"
+                          onClick={() => jumpTo(m.index)}
+                          title={text(`从第 ${printedNumber(m.index)} 小节开始`, `Start from measure ${printedNumber(m.index)}`)}
+                          className={`absolute rounded-sm transition-colors ${active ? "bg-amber-400/20" : "hover:bg-amber-400/10"}`}
+                          style={{
+                            left: `${m.left * 100}%`,
+                            width: `${(m.right - m.left) * 100}%`,
+                            top: `${((m.top - (lower ? 0.5 : 0)) - pad) * 200}%`,
+                            height: `${(m.bottom - m.top + pad * 2) * 200}%`,
+                          }}
+                        />
+                      );
+                    })}
+                    {measure && here && measureHalf(measure) === half && (
+                      <div
+                        className="pointer-events-none absolute w-[3px] rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                        style={{
+                          left: `${(measure.left + (measure.right - measure.left) * here.progress) * 100}%`,
+                          top: `${((measure.top - (lower ? 0.5 : 0)) - (measure.bottom - measure.top) * 0.12) * 200}%`,
+                          height: `${(measure.bottom - measure.top) * 1.24 * 200}%`,
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
         {(detecting || detectError) && (
           <div className="absolute inset-x-0 bottom-0 bg-background/85 p-3 text-center text-sm">
@@ -373,15 +425,15 @@ export function FollowerCore({
         )}
       </div>
 
-      {lastPage > firstPage && (
+      {halfCount > 1 && (
         <div className="mt-2 flex items-center justify-center gap-3">
-          <Button variant="ghost" size="sm" disabled={viewPage <= firstPage || playing} onClick={() => setViewPage(viewPage - 1)}>
+          <Button variant="ghost" size="sm" disabled={viewHalf <= 0 || playing} onClick={() => setViewHalf((half) => Math.max(0, half - 1))}>
             <ChevronLeft className="size-4" />
           </Button>
           <span className="text-xs text-muted-foreground">
-            {text(`第 ${viewPage} 页 · 共 ${firstPage}–${lastPage} 页`, `Page ${viewPage} · Range ${firstPage}–${lastPage}`)}
+            {text(`第 ${halfPage(viewHalf)} 页${viewHalf % 2 ? "下半页" : "上半页"} · 半页预翻`, `Page ${halfPage(viewHalf)}, ${viewHalf % 2 ? "lower" : "upper"} half · preview turn`)}
           </span>
-          <Button variant="ghost" size="sm" disabled={viewPage >= lastPage || playing} onClick={() => setViewPage(viewPage + 1)}>
+          <Button variant="ghost" size="sm" disabled={viewHalf >= halfCount - 1 || playing} onClick={() => setViewHalf((half) => Math.min(halfCount - 1, half + 1))}>
             <ChevronRight className="size-4" />
           </Button>
         </div>
