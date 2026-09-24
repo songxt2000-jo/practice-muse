@@ -369,7 +369,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
     clearHighlight();
     setMeasure(0);
     setBeat(0);
-  }, [clearHighlight]);
+  }, [clearHighlight, applyPage]);
 
   return {
     containerRef: setContainer,
