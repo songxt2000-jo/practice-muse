@@ -21,10 +21,8 @@ export function SiteHeader({ authenticated = false }: { authenticated?: boolean 
   }
 
   function goBack() {
-    // Use the browser stack when the user navigated from inside the app,
-    // otherwise land them on the library.
-    const index = (window.history.state as { idx?: number } | null)?.idx ?? 0;
-    if (index > 0) window.history.go(-1);
+    // Follow the in-app stack when there is one, otherwise land on the library.
+    if (router.history.canGoBack()) router.history.back();
     else navigate({ to: "/archive" });
   }
 
