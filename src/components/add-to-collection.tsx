@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ListPlus, Plus } from "lucide-react";
+import { Check, ListPlus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/lib/i18n";
@@ -41,11 +41,11 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
-  const [flash, setFlash] = useState<string | null>(null);
+  const [flash, setFlash] = useState<{ name: string; added: boolean } | null>(null);
   const flashTimer = useRef<number | null>(null);
 
-  function showFlash(name: string) {
-    setFlash(name);
+  function showFlash(name: string, added: boolean) {
+    setFlash({ name, added });
     if (flashTimer.current) window.clearTimeout(flashTimer.current);
     flashTimer.current = window.setTimeout(() => setFlash(null), 1900);
   }
@@ -72,10 +72,8 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
       }
       await qc.invalidateQueries({ queryKey: ["collections"] });
       void qc.invalidateQueries({ queryKey: ["collection", collectionId] });
-      if (!inIt) {
-        setOpen(false);
-        showFlash(name);
-      }
+      setOpen(false);
+      showFlash(name, !inIt);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : text("操作失败", "Something went wrong"));
     } finally {
@@ -143,8 +141,10 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
       {flash && (
         <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center">
           <div className="center-flash-pill flex items-center gap-2 rounded-full border border-primary/30 bg-primary/95 px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg">
-            <Check className="size-4" />
-            {text(`已添加到「${flash}」`, `Added to “${flash}”`)}
+            {flash.added ? <Check className="size-4" /> : <X className="size-4" />}
+            {flash.added
+              ? text(`已添加到「${flash.name}」`, `Added to “${flash.name}”`)
+              : text(`已从「${flash.name}」移除`, `Removed from “${flash.name}”`)}
           </div>
         </div>
       )}
