@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n";
 
 type TimingEvent = {
   milliseconds: number;
@@ -32,6 +33,7 @@ const HIGHLIGHT_CLASS = "abcjs-note_selected";
  * exposing sounding MIDI pitches, the beat clock, and staff-line paging.
  */
 export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }: Options) {
+  const { text } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   // The score container is mounted/unmounted by mode switches, so track it as
   // state: the render effect below must re-run when the element appears.
@@ -251,7 +253,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
         });
         setReady(true);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "乐谱渲染失败");
+        setError(err instanceof Error ? err.message : text("乐谱渲染失败", "Could not render the score"));
       }
     })();
 
@@ -266,7 +268,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
       timerRef.current = null;
       synthRef.current = null;
     };
-  }, [abc, tempo, containerEl, seekToMs, measureLines, applyPage, clearHighlight]);
+  }, [abc, tempo, containerEl, seekToMs, measureLines, applyPage, clearHighlight, text]);
 
   useEffect(() => {
     const onResize = () => measureLines();

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Upload, BookOpen } from "lucide-react";
+import { useLanguage, useLocalizedDocumentTitle } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/archive")({
   head: () => ({
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/_authenticated/archive")({
 });
 
 function ArchivePage() {
+  const { text } = useLanguage();
+  useLocalizedDocumentTitle("曲库 · 琴谱工作台", "Library · Piano Workbench");
   const queryClient = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLInputElement>(null);
@@ -47,14 +50,14 @@ function ArchivePage() {
     mutationFn: async () => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
-      if (!uid) throw new Error("请先登录");
+      if (!uid) throw new Error(text("请先登录", "Please log in first"));
 
       if (mode === "images") {
         const files = Array.from(imageRef.current?.files ?? []).sort((a, b) =>
           a.name.localeCompare(b.name, undefined, { numeric: true }),
         );
-        if (!files.length) throw new Error("请选择至少一张乐谱图片");
-        if (files.length > 100) throw new Error("一次最多上传 100 张图片");
+        if (!files.length) throw new Error(text("请选择至少一张乐谱图片", "Choose at least one score image"));
+        if (files.length > 100) throw new Error(text("一次最多上传 100 张图片", "You can upload up to 100 images at once"));
 
         const folder = `${uid}/${crypto.randomUUID()}`;
         for (let i = 0; i < files.length; i += 1) {
@@ -87,7 +90,7 @@ function ArchivePage() {
       }
 
       const file = fileRef.current?.files?.[0];
-      if (!file) throw new Error("请选择一个 PDF 文件");
+      if (!file) throw new Error(text("请选择一个 PDF 文件", "Choose a PDF file"));
 
       const buffer = await file.arrayBuffer();
       const { loadPdf } = await import("@/lib/pdf");
@@ -122,29 +125,29 @@ function ArchivePage() {
       return data;
     },
     onSuccess: () => {
-      toast.success("已上传，进入书内即可开始识别曲目。");
+      toast.success(text("已上传，进入书内即可开始识别曲目。", "Uploaded. Open the collection to organize its pieces."));
       setTitle("");
       setComposer("");
       if (fileRef.current) fileRef.current.value = "";
       if (imageRef.current) imageRef.current.value = "";
       void queryClient.invalidateQueries({ queryKey: ["books"] });
     },
-    onError: (error) => toast.error(error instanceof Error ? error.message : "上传失败"),
+    onError: (error) => toast.error(error instanceof Error ? error.message : text("上传失败", "Upload failed")),
   });
 
   return (
     <AppShell>
       <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
         <section>
-          <h1 className="text-3xl">我的曲库</h1>
+          <h1 className="text-3xl">{text("我的曲库", "My library")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            每本曲集可以自动拆分出曲目，点开曲目再按需识谱。
+            {text("每本曲集可以自动拆分出曲目，点开曲目再按需识谱。", "Organize every collection into pieces, then transcribe only what you need.")}
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {booksQuery.isLoading && <p className="text-sm text-muted-foreground">载入中…</p>}
+            {booksQuery.isLoading && <p className="text-sm text-muted-foreground">{text("载入中…", "Loading…")}</p>}
             {booksQuery.data?.length === 0 && (
-              <p className="text-sm text-muted-foreground">还没有曲集，先上传一本 PDF 吧。</p>
+              <p className="text-sm text-muted-foreground">{text("还没有曲集，先上传一本 PDF 或几张乐谱图片吧。", "No collections yet. Upload a PDF or score images to begin.")}</p>
             )}
             {booksQuery.data?.map((book) => (
               <Link
@@ -156,10 +159,10 @@ function ArchivePage() {
                 <BookOpen className="size-5 text-primary" />
                 <h2 className="mt-3 text-xl group-hover:text-primary">{book.title}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {book.composer ?? "未知作曲家"} · {book.page_count} 页
+                  {book.composer ?? text("未知作曲家", "Unknown composer")} · {book.page_count} {text("页", "pages")}
                 </p>
                 <p className="mt-3 text-xs uppercase tracking-widest text-muted-foreground">
-                  {book.scan_status === "ready" ? "已拆书" : "待拆书"}
+                  {book.scan_status === "ready" ? text("已拆书", "Organized") : text("待拆书", "Not organized")}
                 </p>
               </Link>
             ))}
@@ -167,43 +170,43 @@ function ArchivePage() {
         </section>
 
         <aside className="surface-salon h-fit rounded-xl p-5">
-          <h2 className="text-xl">上传乐谱</h2>
+          <h2 className="text-xl">{text("上传乐谱", "Upload scores")}</h2>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant={mode === "pdf" ? "default" : "outline"}
               onClick={() => setMode("pdf")}
             >
-              PDF 曲集
+              {text("PDF 曲集", "PDF collection")}
             </Button>
             <Button
               type="button"
               variant={mode === "images" ? "default" : "outline"}
               onClick={() => setMode("images")}
             >
-              乐谱图片
+              {text("乐谱图片", "Score images")}
             </Button>
           </div>
           <div className="mt-4 space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="title">书名 / 曲名（可留空）</Label>
+              <Label htmlFor="title">{text("书名 / 曲名（可留空）", "Collection / piece title (optional)")}</Label>
               <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="composer">作曲家 / 编者</Label>
+              <Label htmlFor="composer">{text("作曲家 / 编者", "Composer / editor")}</Label>
               <Input id="composer" value={composer} onChange={(e) => setComposer(e.target.value)} />
             </div>
             {mode === "pdf" ? (
               <div className="space-y-2">
-                <Label htmlFor="pdf">PDF 文件</Label>
+                <Label htmlFor="pdf">{text("PDF 文件", "PDF file")}</Label>
                 <Input id="pdf" ref={fileRef} type="file" accept="application/pdf" />
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="images">乐谱图片（可多选 / 拍照）</Label>
+                <Label htmlFor="images">{text("乐谱图片（可多选 / 拍照）", "Score images (select multiple or take photos)")}</Label>
                 <Input id="images" ref={imageRef} type="file" accept="image/*" multiple />
                 <p className="text-xs text-muted-foreground">
-                  支持扫描版乐谱图片，也可以直接拍纸质谱子。多张图片会按文件名顺序当作连续页面。
+                  {text("支持扫描版乐谱图片，也可以直接拍纸质谱子。多张图片会按文件名顺序当作连续页面。", "Use scanned score images or photos of paper music. Multiple images are ordered by filename as consecutive pages.")}
                 </p>
               </div>
             )}
@@ -217,7 +220,7 @@ function ArchivePage() {
               ) : (
                 <Upload className="size-4" />
               )}
-              上传
+              {text("上传", "Upload")}
             </Button>
           </div>
         </aside>

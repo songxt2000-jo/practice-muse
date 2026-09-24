@@ -39,6 +39,8 @@ import {
   Wand2,
 } from "lucide-react";
 import { recordPiecePractice, finishSession } from "@/lib/practice-session";
+import { useLanguage, useLocalizedDocumentTitle } from "@/lib/i18n";
+import { SiteHeader } from "@/components/site-header";
 
 export const Route = createFileRoute("/_authenticated/practice/$pieceId")({
   head: () => ({
@@ -57,6 +59,8 @@ export const Route = createFileRoute("/_authenticated/practice/$pieceId")({
 });
 
 function PracticeStudio() {
+  const { text } = useLanguage();
+  useLocalizedDocumentTitle("练习室 · 琴谱工作台", "Practice Studio · Piano Workbench");
   const { pieceId } = Route.useParams();
   const mode = Route.useSearch().mode ?? "follow";
   const navigate = useNavigate();
@@ -130,7 +134,7 @@ function PracticeStudio() {
   const applyToken = useCallback(
     (next: string | null) => {
       if (!next || !selection || !draftAbc) {
-        if (!next) toast.error("这个记号暂时不支持快捷修改，可直接编辑下方文本。");
+        if (!next) toast.error(text("这个记号暂时不支持快捷修改，可直接编辑下方文本。", "This symbol cannot be changed with a shortcut. Use the field below."));
         return;
       }
       setDraftAbc(replaceRange(draftAbc, selection.startChar, selection.endChar, next));
@@ -153,10 +157,10 @@ function PracticeStudio() {
         .update({ abc_notation: draftAbc })
         .eq("id", pieceId);
       if (error) throw error;
-      toast.success("修改已保存。");
+      toast.success(text("修改已保存。", "Changes saved."));
       void queryClient.invalidateQueries({ queryKey: ["piece", pieceId] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "保存失败");
+      toast.error(err instanceof Error ? err.message : text("保存失败", "Could not save"));
     } finally {
       setSaving(false);
     }
@@ -171,7 +175,7 @@ function PracticeStudio() {
         .select("storage_path, source_type")
         .eq("id", piece.book_id!)
         .single();
-      if (error || !book?.storage_path) throw new Error("找不到曲集文件");
+      if (error || !book?.storage_path) throw new Error(text("找不到曲集文件", "Collection file not found"));
 
       const pdf = await openBookSource(book.storage_path, book.source_type);
       const start = piece.start_page ?? 1;
@@ -181,10 +185,10 @@ function PracticeStudio() {
         pages.push({ page: p, dataUrl: await pdf.renderPage(p, 1400) });
       }
       await runTranscribe({ data: { pieceId, title: piece.title, pages } });
-      toast.success("识谱完成，可以开始练习了。");
+      toast.success(text("识谱完成，可以开始练习了。", "Transcription complete. You can start practicing."));
       void queryClient.invalidateQueries({ queryKey: ["piece", pieceId] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "识谱失败，请重试");
+      toast.error(err instanceof Error ? err.message : text("识谱失败，请重试", "Transcription failed. Please try again."));
     } finally {
       setTranscribing(false);
     }
@@ -195,7 +199,7 @@ function PracticeStudio() {
     // 结束报告弹窗暂时关闭（将来做师生练习报告时恢复 UI），计时数据仍照常入库。
     await recordPiecePractice({
       pieceId,
-      pieceTitle: piece?.title ?? "未命名",
+      pieceTitle: piece?.title ?? text("未命名", "Untitled"),
       seconds: elapsed,
       tempo,
       loopFrom: loopOn ? loopFrom : null,
@@ -216,24 +220,25 @@ function PracticeStudio() {
   }
 
   if (pieceQuery.isLoading) {
-    return <div className="p-10 text-center text-muted-foreground">载入中…</div>;
+    return <div className="p-10 text-center text-muted-foreground">{text("载入中…", "Loading…")}</div>;
   }
 
   return (
-    <div
-      ref={shellRef}
-      className={`min-h-screen bg-background px-5 py-6 ${
-        focus ? "h-screen overflow-y-auto" : ""
-      }`}
-    >
-      <div className="mx-auto max-w-5xl">
+    <>
+      {!focus && <SiteHeader authenticated />}
+      <div
+        ref={shellRef}
+        className={`min-h-screen bg-background px-5 py-6 ${
+          focus ? "h-screen overflow-y-auto" : ""
+        }`}
+      >
+        <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl">{piece?.title}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {piece?.composer ?? "未知作曲家"}
-              {piece?.key_signature ? ` · ${piece.key_signature}` : ""} · 第 {piece?.start_page}–
-              {piece?.end_page} 页
+              {piece?.composer ?? text("未知作曲家", "Unknown composer")}
+              {piece?.key_signature ? ` · ${piece.key_signature}` : ""} · {text(`第 ${piece?.start_page}–${piece?.end_page} 页`, `Pages ${piece?.start_page}–${piece?.end_page}`)}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -245,18 +250,18 @@ function PracticeStudio() {
             )}
             <Button variant="ghost" size="sm" onClick={toggleFullscreen}>
               {focus ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
-              专注
+              {text("专注", "Focus")}
             </Button>
             <Button variant="secondary" size="sm" onClick={endPractice}>
-              结束练习
+              {text("结束练习", "End practice")}
             </Button>
           </div>
         </div>
 
         <div className="mt-4 inline-flex rounded-full border border-border p-1 text-sm">
           {([
-            ["follow", "原谱跟随"],
-            ["ai", "AI 识谱"],
+            ["follow", text("原谱跟随", "Follow original")],
+            ["ai", text("AI 识谱", "AI notation")],
           ] as const).map(([value, label]) => (
             <button
               key={value}
@@ -294,14 +299,14 @@ function PracticeStudio() {
 
         {mode === "follow" ? null : !piece?.abc_notation ? (
           <div className="surface-salon mt-8 rounded-xl p-10 text-center">
-            <p className="text-muted-foreground">这首曲子还没有识谱。</p>
+            <p className="text-muted-foreground">{text("这首曲子还没有识谱。", "This piece has not been transcribed yet.")}</p>
             <Button className="mt-4" onClick={transcribe} disabled={transcribing}>
               {transcribing ? (
                 <Loader2 className="size-4 animate-spin" />
               ) : (
                 <Wand2 className="size-4" />
               )}
-              {transcribing ? "AI 正在识谱…" : "开始识谱"}
+              {transcribing ? text("AI 正在识谱…", "AI is transcribing…") : text("开始识谱", "Start transcription")}
             </Button>
           </div>
         ) : (
@@ -322,10 +327,10 @@ function PracticeStudio() {
                 disabled={player.page === 0}
               >
                 <ChevronLeft className="size-4" />
-                上一页
+                {text("上一页", "Previous")}
               </Button>
               <span className="text-xs text-muted-foreground">
-                第 {player.page + 1} / {player.pageCount} 页（每页 4 行，播放时自动翻页）
+                {text(`第 ${player.page + 1} / ${player.pageCount} 页（每页 4 行，播放时自动翻页）`, `Page ${player.page + 1} / ${player.pageCount} (4 systems per page, auto-turn during playback)`)}
               </span>
               <Button
                 variant="secondary"
@@ -333,7 +338,7 @@ function PracticeStudio() {
                 onClick={() => player.goToPage(player.page + 1)}
                 disabled={player.page >= player.pageCount - 1}
               >
-                下一页
+                {text("下一页", "Next")}
                 <ChevronRight className="size-4" />
               </Button>
             </div>
@@ -343,7 +348,7 @@ function PracticeStudio() {
                 <div className="flex items-center gap-2">
                   <Pencil className="size-4 text-primary" />
                   <Label htmlFor="edit-mode" className="text-sm">
-                    修改音符
+                    {text("修改音符", "Edit notes")}
                   </Label>
                   <Switch
                     id="edit-mode"
@@ -358,9 +363,9 @@ function PracticeStudio() {
                 <span className="text-xs text-muted-foreground">
                   {editMode
                     ? selection
-                      ? `已选中：${currentToken}`
-                      : "点击谱面上任意一个音符来修改它"
-                    : "打开后，点击谱面音符即可手工纠正 AI 识别错误"}
+                      ? text(`已选中：${currentToken}`, `Selected: ${currentToken}`)
+                      : text("点击谱面上任意一个音符来修改它", "Select any note in the score to edit it")
+                    : text("打开后，点击谱面音符即可手工纠正 AI 识别错误", "Turn this on to correct AI transcription errors by selecting notes")}
                 </span>
                 <div className="ml-auto flex items-center gap-2">
                   <Button
@@ -373,11 +378,11 @@ function PracticeStudio() {
                     }}
                   >
                     <Undo2 className="size-4" />
-                    还原
+                    {text("还原", "Reset")}
                   </Button>
                   <Button size="sm" disabled={!dirty || saving} onClick={saveAbc}>
                     {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
-                    保存修改
+                    {text("保存修改", "Save changes")}
                   </Button>
                 </div>
               </div>
@@ -386,32 +391,32 @@ function PracticeStudio() {
                 <div className="mt-4 space-y-3 border-t border-border pt-4">
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" variant="secondary" onClick={() => applyToken(shiftStep(currentToken, 1))}>
-                      升一个音
+                      {text("升一个音", "Step up")}
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => applyToken(shiftStep(currentToken, -1))}>
-                      降一个音
+                      {text("降一个音", "Step down")}
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => applyToken(shiftSemitone(currentToken, 1))}>
-                      升半音 ♯
+                      {text("升半音 ♯", "Semitone up ♯")}
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => applyToken(shiftSemitone(currentToken, -1))}>
-                      降半音 ♭
+                      {text("降半音 ♭", "Semitone down ♭")}
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => applyToken(shiftOctave(currentToken, 1))}>
-                      升八度
+                      {text("升八度", "Octave up")}
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => applyToken(shiftOctave(currentToken, -1))}>
-                      降八度
+                      {text("降八度", "Octave down")}
                     </Button>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">时值：</span>
+                    <span className="text-xs text-muted-foreground">{text("时值：", "Duration:")}</span>
                     {[
-                      { label: "二倍", value: "2" },
-                      { label: "原长", value: "" },
-                      { label: "一半", value: "/2" },
-                      { label: "四分之一", value: "/4" },
-                      { label: "附点", value: "3/2" },
+                      { label: text("二倍", "Double"), value: "2" },
+                      { label: text("原长", "Original"), value: "" },
+                      { label: text("一半", "Half"), value: "/2" },
+                      { label: text("四分之一", "Quarter"), value: "/4" },
+                      { label: text("附点", "Dotted"), value: "3/2" },
                     ].map((option) => (
                       <Button
                         key={option.label}
@@ -425,36 +430,36 @@ function PracticeStudio() {
                   </div>
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-muted-foreground">直接改写：</span>
+                      <span className="text-xs text-muted-foreground">{text("直接改写：", "Direct entry:")}</span>
                       <Input
                         value={tokenText}
                         onChange={(e) => setTokenText(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") applyToken(parseHumanNote(tokenText));
                         }}
-                        placeholder="中央do / 升fa / 低音la 两拍"
+                        placeholder={text("中央do / 升fa / 低音la 两拍", "middle C / F sharp / low A two beats")}
                         className="w-56"
                       />
                       <Button size="sm" onClick={() => applyToken(parseHumanNote(tokenText))}>
-                        应用
+                        {text("应用", "Apply")}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => applyToken("z")}>
-                        变成休止符
+                        {text("变成休止符", "Make rest")}
                       </Button>
                       {tokenText.trim() && (
                         <span className="text-xs text-muted-foreground">
                           {parseHumanNote(tokenText)
-                            ? `将写成：${parseHumanNote(tokenText)}`
-                            : "没听懂这个写法，换个说法试试"}
+                            ? text(`将写成：${parseHumanNote(tokenText)}`, `Will write: ${parseHumanNote(tokenText)}`)
+                            : text("没听懂这个写法，换个说法试试", "That format was not recognized. Try another wording.")}
                         </span>
                       )}
                     </div>
                     <div className="rounded-lg bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
-                      <p className="text-foreground">可以直接用中文说，也可以写音名：</p>
-                      <p>音高：中央do / 中央C、低音sol、高音la、高音5（1~7 对应 do~si）</p>
-                      <p>升降：升fa、降si、还原mi（也可写 ^F、_B、=E）</p>
-                      <p>时长：两拍、半拍、附点，例如「低音la 两拍」「高音do 半拍」</p>
-                      <p>休止：直接输入「休止」或 z</p>
+                      <p className="text-foreground">{text("可以直接用中文说，也可以写音名：", "Enter a note name or ABC notation:")}</p>
+                      <p>{text("音高：中央do / 中央C、低音sol、高音la、高音5（1~7 对应 do~si）", "Pitch: middle C, low G, high A, or C/D/E/F/G/A/B")}</p>
+                      <p>{text("升降：升fa、降si、还原mi（也可写 ^F、_B、=E）", "Accidentals: F sharp, B flat, E natural (or ^F, _B, =E)")}</p>
+                      <p>{text("时长：两拍、半拍、附点，例如「低音la 两拍」「高音do 半拍」", "Duration: two beats, half beat, or dotted; e.g. low A two beats")}</p>
+                      <p>{text("休止：直接输入「休止」或 z", "Rest: enter “rest” or z")}</p>
                     </div>
                   </div>
                 </div>
@@ -474,17 +479,17 @@ function PracticeStudio() {
                   disabled={!player.ready}
                 >
                   {player.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
-                  {player.playing ? "暂停" : "播放"}
+                  {player.playing ? text("暂停", "Pause") : text("播放", "Play")}
                 </Button>
                 <Button variant="secondary" onClick={player.stop}>
                   <Square className="size-4" />
-                  停止
+                  {text("停止", "Stop")}
                 </Button>
                 <Metronome bpm={tempo} syncBeat={player.beat} syncing={player.playing} />
                 <div className="flex items-center gap-2">
                   <Switch id="hide-timer" checked={hideTimer} onCheckedChange={setHideTimer} />
                   <Label htmlFor="hide-timer" className="text-sm">
-                    隐藏计时器
+                    {text("隐藏计时器", "Hide timer")}
                   </Label>
                 </div>
               </div>
@@ -492,7 +497,7 @@ function PracticeStudio() {
               <div className="mt-5 grid gap-5 md:grid-cols-2">
                 <div>
                   <div className="flex items-center justify-between text-sm">
-                    <span>速度</span>
+                    <span>{text("速度", "Tempo")}</span>
                     <span className="tabular-nums text-primary">{tempo} BPM</span>
                   </div>
                   <Slider
@@ -508,7 +513,7 @@ function PracticeStudio() {
                 <div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
-                      <Repeat className="size-4" /> 选段循环 (AB)
+                      <Repeat className="size-4" /> {text("选段循环 (AB)", "Section loop (AB)")}
                     </span>
                     <Switch checked={loopOn} onCheckedChange={setLoopOn} />
                   </div>
@@ -520,7 +525,7 @@ function PracticeStudio() {
                       onChange={(e) => setLoopFrom(Number(e.target.value))}
                       className="w-20"
                     />
-                    <span className="text-sm text-muted-foreground">至</span>
+                    <span className="text-sm text-muted-foreground">{text("至", "to")}</span>
                     <Input
                       type="number"
                       min={1}
@@ -533,10 +538,10 @@ function PracticeStudio() {
                       size="sm"
                       onClick={() => player.seekToMeasure(loopFrom - 1)}
                     >
-                      跳到起点
+                      {text("跳到起点", "Go to start")}
                     </Button>
                     <span className="text-xs text-muted-foreground">
-                      共 {player.measureCount} 小节
+                      {text(`共 ${player.measureCount} 小节`, `${player.measureCount} measures`)}
                     </span>
                   </div>
                 </div>
@@ -545,7 +550,7 @@ function PracticeStudio() {
               <div className="mt-6">
                 <PianoKeyboard active={player.activeMidi} />
                 <p className="mt-2 text-center text-xs text-muted-foreground">
-                  当前第 {player.measure + 1} 小节 · 点击谱面任意音符可从该处起播
+                  {text(`当前第 ${player.measure + 1} 小节 · 点击谱面任意音符可从该处起播`, `Measure ${player.measure + 1} · Select any note to start playback there`)}
                 </p>
               </div>
             </div>
@@ -553,37 +558,37 @@ function PracticeStudio() {
             <Collapsible className="surface-salon mt-6 rounded-xl p-5">
               <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
                 <span className="text-xl" style={{ fontFamily: "var(--font-display)" }}>
-                  乐曲创作背景
+                  {text("乐曲创作背景", "About the piece")}
                 </span>
                 <ChevronDown className="size-4" />
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-4 space-y-3 text-sm leading-relaxed text-muted-foreground">
                 <p>
-                  <span className="text-foreground">作曲家：</span>
+                  <span className="text-foreground">{text("作曲家：", "Composer: ")}</span>
                   {piece?.composer ?? "—"}
                 </p>
                 <p>
-                  <span className="text-foreground">年代：</span>
+                  <span className="text-foreground">{text("年代：", "Era: ")}</span>
                   {piece?.era ?? "—"}
                 </p>
                 <p>
-                  <span className="text-foreground">情绪：</span>
+                  <span className="text-foreground">{text("情绪：", "Mood: ")}</span>
                   {piece?.mood ?? "—"}
                 </p>
                 <p>
-                  <span className="text-foreground">背景：</span>
+                  <span className="text-foreground">{text("背景：", "Background: ")}</span>
                   {piece?.background ?? "—"}
                 </p>
                 <p>
-                  <span className="text-foreground">故事剧情：</span>
+                  <span className="text-foreground">{text("故事剧情：", "Story: ")}</span>
                   {piece?.story ?? "—"}
                 </p>
               </CollapsibleContent>
             </Collapsible>
           </>
         )}
+        </div>
       </div>
-
-    </div>
+    </>
   );
 }

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ScanLine, Music2, BookOpen, Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import { openBookSource } from "@/lib/book-pages";
+import { useLanguage, useLocalizedDocumentTitle } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/books/$bookId")({
   head: () => ({
@@ -28,6 +29,8 @@ export const Route = createFileRoute("/_authenticated/books/$bookId")({
 });
 
 function BookPage() {
+  const { text } = useLanguage();
+  useLocalizedDocumentTitle("曲集详情 · 琴谱工作台", "Collection · Piano Workbench");
   const { bookId } = Route.useParams();
   const queryClient = useQueryClient();
   const scanPages = useServerFn(scanBookPages);
@@ -211,13 +214,13 @@ function BookPage() {
 
       toast.success(
         preserved > 0
-          ? `拆书完成，共识别 ${sorted.length} 首曲目，其中 ${preserved} 首已识谱的结果原样保留。`
-          : `拆书完成，共识别 ${sorted.length} 首曲目。`,
+          ? text(`拆书完成，共识别 ${sorted.length} 首曲目，其中 ${preserved} 首已识谱的结果原样保留。`, `Organization complete: ${sorted.length} pieces found, with ${preserved} existing transcriptions preserved.`)
+          : text(`拆书完成，共识别 ${sorted.length} 首曲目。`, `Organization complete: ${sorted.length} pieces found.`),
       );
       void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
       void queryClient.invalidateQueries({ queryKey: ["book", bookId] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "拆书失败，请稍后重试");
+      toast.error(error instanceof Error ? error.message : text("拆书失败，请稍后重试", "Could not organize this collection. Please try again."));
     } finally {
       setScanning(false);
       setProgress(0);
@@ -229,9 +232,9 @@ function BookPage() {
     const start = Number(manualStart);
     const end = Number(manualEnd || manualStart);
     const title = manualTitle.trim();
-    if (!title) { toast.error("请先填写曲名"); return; }
+    if (!title) { toast.error(text("请先填写曲名", "Enter a piece title")); return; }
     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || (total && end > total)) {
-      toast.error(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`);
+      toast.error(text(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`, `Invalid pages: the first page must be at least 1, the last cannot be earlier${total ? `, and cannot exceed ${total}` : ""}`));
       return;
     }
     setAdding(true);
@@ -257,13 +260,13 @@ function BookPage() {
       await Promise.all(
         ordered.map((p, i) => supabase.from("pieces").update({ sort_order: i }).eq("id", p.id)),
       );
-      toast.success(`已添加《${title}》（第 ${start}–${end} 页）`);
+      toast.success(text(`已添加《${title}》（第 ${start}–${end} 页）`, `Added “${title}” (pages ${start}–${end})`));
       setManualTitle("");
       setManualStart("");
       setManualEnd("");
       void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "添加失败");
+      toast.error(error instanceof Error ? error.message : text("添加失败", "Could not add piece"));
     } finally {
       setAdding(false);
     }
@@ -289,13 +292,13 @@ function BookPage() {
     const title = editTitle.trim();
     const start = Number(editStart);
     const end = Number(editEnd || editStart);
-    if (!title) { toast.error("曲名不能为空"); return; }
+    if (!title) { toast.error(text("曲名不能为空", "Piece title cannot be empty")); return; }
     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || (total && end > total)) {
-      toast.error(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`);
+      toast.error(text(`页码不对：起始页需 ≥1，结束页不能小于起始页${total ? `，且不超过 ${total}` : ""}`, `Invalid pages: the first page must be at least 1, the last cannot be earlier${total ? `, and cannot exceed ${total}` : ""}`));
       return;
     }
     const pagesChanged = start !== p.start_page || end !== p.end_page;
-    if (pagesChanged && p.abc_notation && !window.confirm("这首已经识过谱，页码改了之后旧的识谱结果可能对不上。仍然保留旧结果吗？（可之后在识谱页重新识别）")) {
+    if (pagesChanged && p.abc_notation && !window.confirm(text("这首已经识过谱，页码改了之后旧的识谱结果可能对不上。仍然保留旧结果吗？（可之后在识谱页重新识别）", "This piece has already been transcribed. Changing its pages may make the existing notation inaccurate. Keep it anyway?"))) {
       return;
     }
     setSavingEdit(true);
@@ -303,22 +306,22 @@ function BookPage() {
       const { error } = await supabase.from("pieces").update({ title, start_page: start, end_page: end }).eq("id", p.id);
       if (error) throw error;
       if (pagesChanged) await resort();
-      toast.success("已更新");
+      toast.success(text("已更新", "Updated"));
       setEditingId(null);
       void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "保存失败");
+      toast.error(error instanceof Error ? error.message : text("保存失败", "Could not save changes"));
     } finally {
       setSavingEdit(false);
     }
   }
 
   async function deletePiece(p: PieceRow) {
-    if (!window.confirm(`确定删除《${p.title}》吗？${p.abc_notation ? "它的识谱结果也会一起删除。" : ""}`)) return;
+    if (!window.confirm(text(`确定删除《${p.title}》吗？${p.abc_notation ? "它的识谱结果也会一起删除。" : ""}`, `Delete “${p.title}”?${p.abc_notation ? " Its transcription will also be deleted." : ""}`))) return;
     const { error } = await supabase.from("pieces").delete().eq("id", p.id);
     if (error) { toast.error(error.message); return; }
     await resort();
-    toast.success("已删除");
+    toast.success(text("已删除", "Deleted"));
     void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
   }
 
@@ -329,17 +332,17 @@ function BookPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Link to="/archive" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-            ← 返回曲库
+            ← {text("返回曲库", "Back to library")}
           </Link>
-          <h1 className="mt-2 text-3xl">{book?.title ?? "载入中…"}</h1>
+          <h1 className="mt-2 text-3xl">{book?.title ?? text("载入中…", "Loading…")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {book?.composer ?? "未知作曲家"} · 共 {book?.page_count ?? 0} 页
+            {book?.composer ?? text("未知作曲家", "Unknown composer")} · {book?.page_count ?? 0} {text("页", "pages")}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
             <Label htmlFor="skip" className="text-xs text-muted-foreground">
-              跳过开头页数（前言 / 编者按）
+              {text("跳过开头页数（前言 / 编者按）", "Skip opening pages (preface / notes)")}
             </Label>
             <Input
               id="skip"
@@ -357,7 +360,7 @@ function BookPage() {
             ) : (
               <ScanLine className="size-4" />
             )}
-            {scanning ? "正在拆书…" : "AI 拆书（扫描曲目）"}
+            {scanning ? text("正在拆书…", "Scanning…") : text("AI 拆书（扫描曲目）", "AI organize (scan pieces)")}
           </Button>
         </div>
       </div>
@@ -365,34 +368,34 @@ function BookPage() {
       {scanning && <Progress value={progress} className="mt-4" />}
 
       <section className="surface-salon mt-6 rounded-xl p-5">
-        <h2 className="text-xl">手动拆书（不用 AI）</h2>
+        <h2 className="text-xl">{text("手动拆书（不用 AI）", "Organize manually (no AI)")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          输入曲名和页码范围，直接把这几页拆成一首曲目。
+          {text("输入曲名和页码范围，直接把这几页拆成一首曲目。", "Enter a title and page range to create a piece from those pages.")}
         </p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
           <div className="min-w-48 flex-1 space-y-1">
-            <Label htmlFor="m-title" className="text-xs text-muted-foreground">曲名</Label>
-            <Input id="m-title" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder="例如：小步舞曲" />
+            <Label htmlFor="m-title" className="text-xs text-muted-foreground">{text("曲名", "Title")}</Label>
+            <Input id="m-title" value={manualTitle} onChange={(e) => setManualTitle(e.target.value)} placeholder={text("例如：小步舞曲", "e.g. Minuet")} />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="m-start" className="text-xs text-muted-foreground">起始页</Label>
+            <Label htmlFor="m-start" className="text-xs text-muted-foreground">{text("起始页", "First page")}</Label>
             <Input id="m-start" type="number" min={1} value={manualStart} onChange={(e) => setManualStart(e.target.value)} className="w-24" />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="m-end" className="text-xs text-muted-foreground">结束页</Label>
+            <Label htmlFor="m-end" className="text-xs text-muted-foreground">{text("结束页", "Last page")}</Label>
             <Input id="m-end" type="number" min={1} value={manualEnd} onChange={(e) => setManualEnd(e.target.value)} className="w-24" />
           </div>
           <Button variant="secondary" onClick={addManualPiece} disabled={adding}>
             {adding ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}
-            添加曲目
+            {text("添加曲目", "Add piece")}
           </Button>
         </div>
       </section>
 
       <section className="mt-8">
-        <h2 className="text-xl">曲目</h2>
+        <h2 className="text-xl">{text("曲目", "Pieces")}</h2>
         {piecesQuery.data?.length === 0 && (
-          <p className="mt-2 text-sm text-muted-foreground">还没有曲目，先执行一次 AI 拆书。</p>
+          <p className="mt-2 text-sm text-muted-foreground">{text("还没有曲目，可手动添加或使用 AI 拆书。", "No pieces yet. Add one manually or use AI organization.")}</p>
         )}
         <div className="mt-4 grid gap-3">
           {piecesQuery.data?.map((piece) => (
@@ -403,24 +406,24 @@ function BookPage() {
               {editingId === piece.id ? (
                 <div className="flex flex-1 flex-wrap items-end gap-2">
                   <div className="min-w-40 flex-1 space-y-1">
-                    <Label className="text-xs text-muted-foreground">曲名</Label>
+                    <Label className="text-xs text-muted-foreground">{text("曲名", "Title")}</Label>
                     <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">起始页</Label>
+                    <Label className="text-xs text-muted-foreground">{text("起始页", "First page")}</Label>
                     <Input type="number" min={1} value={editStart} onChange={(e) => setEditStart(e.target.value)} className="w-20" />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">结束页</Label>
+                    <Label className="text-xs text-muted-foreground">{text("结束页", "Last page")}</Label>
                     <Input type="number" min={1} value={editEnd} onChange={(e) => setEditEnd(e.target.value)} className="w-20" />
                   </div>
                   <Button size="sm" onClick={() => saveEdit(piece)} disabled={savingEdit}>
                     {savingEdit ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-                    保存
+                    {text("保存", "Save")}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
                     <X className="size-4" />
-                    取消
+                    {text("取消", "Cancel")}
                   </Button>
                 </div>
               ) : (
@@ -428,16 +431,16 @@ function BookPage() {
                   <div>
                     <p className="text-lg">{piece.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      第 {piece.start_page}–{piece.end_page} 页
+                      {text(`第 ${piece.start_page}–${piece.end_page} 页`, `Pages ${piece.start_page}–${piece.end_page}`)}
                       {piece.mood ? ` · ${piece.mood}` : ""}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => startEdit(piece)} aria-label="修改曲名和页码">
+                    <Button size="sm" variant="ghost" onClick={() => startEdit(piece)} aria-label={text("修改曲名和页码", "Edit title and pages")}>
                       <Pencil className="size-4" />
-                      修改
+                      {text("修改", "Edit")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => deletePiece(piece)} aria-label="删除曲目">
+                    <Button size="sm" variant="ghost" onClick={() => deletePiece(piece)} aria-label={text("删除曲目", "Delete piece")}>
                       <Trash2 className="size-4" />
                     </Button>
                     <Button asChild size="sm" variant="secondary">
@@ -447,13 +450,13 @@ function BookPage() {
                         search={{ mode: "follow" }}
                       >
                         <BookOpen className="size-4" />
-                        原谱跟随
+                        {text("原谱跟随", "Follow original")}
                       </Link>
                     </Button>
                     <Button asChild size="sm" variant="outline">
                       <Link to="/practice/$pieceId" params={{ pieceId: piece.id }} search={{ mode: "ai" }}>
                         <Music2 className="size-4" />
-                        {piece.transcribe_status === "ready" ? "AI 识谱 · 可练习" : "AI 识谱"}
+                        {piece.transcribe_status === "ready" ? text("AI 识谱 · 可练习", "AI notation · Ready") : text("AI 识谱", "AI notation")}
                       </Link>
                     </Button>
                   </div>
@@ -465,11 +468,11 @@ function BookPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-xl">页面预览</h2>
+        <h2 className="text-xl">{text("页面预览", "Page preview")}</h2>
         <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-6">
           {thumbs.map((src, index) => (
             <figure key={index} className="score-sheet overflow-hidden">
-              <img src={src} alt={`第 ${index + 1} 页`} className="w-full" />
+              <img src={src} alt={text(`第 ${index + 1} 页`, `Page ${index + 1}`)} className="w-full" />
               <figcaption className="px-2 py-1 text-center text-[10px] text-score-foreground/70">
                 {index + 1}
               </figcaption>

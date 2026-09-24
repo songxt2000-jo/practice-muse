@@ -103,7 +103,7 @@ const SOLFEGE: Record<string, string> = {
 export function parseHumanNote(input: string): string | null {
   const raw = input.trim();
   if (!raw) return null;
-  if (/^(休止|休止符|空拍|静音)$/.test(raw) || raw.toLowerCase() === "z") return "z";
+  if (/^(休止|休止符|空拍|静音)$/.test(raw) || /^(z|rest|silence)$/i.test(raw)) return "z";
 
   const text = raw.toLowerCase().replace(/\s+/g, "");
 
@@ -116,11 +116,11 @@ export function parseHumanNote(input: string): string | null {
   else if (/(还原|本位|natural)/.test(text)) accidental = "=";
 
   let level = 0;
-  if (/(中央|中音)/.test(text)) level = 0;
-  if (/(高音|高八度|上八度)/.test(text)) level = 1;
-  if (/(超高|特高|高两个八度)/.test(text)) level = 2;
-  if (/(低音|低八度|下八度)/.test(text)) level = -1;
-  if (/(超低|特低|低两个八度)/.test(text)) level = -2;
+  if (/(中央|中音|middle)/.test(text)) level = 0;
+  if (/(高音|高八度|上八度|high)/.test(text)) level = 1;
+  if (/(超高|特高|高两个八度|veryhigh)/.test(text)) level = 2;
+  if (/(低音|低八度|下八度|low)/.test(text)) level = -1;
+  if (/(超低|特低|低两个八度|verylow)/.test(text)) level = -2;
 
   let letter: string | null = null;
   for (const key of ["sol", "so", "do", "re", "mi", "fa", "la", "si", "ti"]) {
@@ -147,9 +147,9 @@ export function parseHumanNote(input: string): string | null {
   if (!letter) return null;
 
   let duration = "";
-  const beats = raw.match(/([0-9]+(?:\.5)?)拍/);
-  if (/(附点)/.test(text)) duration = "3/2";
-  else if (/(半拍)/.test(text)) duration = "/2";
+  const beats = raw.match(/([0-9]+(?:\.5)?)(?:拍|beats?)/i);
+  if (/(附点|dotted)/.test(text)) duration = "3/2";
+  else if (/(半拍|halfbeat)/.test(text)) duration = "/2";
   else if (beats?.[1]) {
     const value = Number(beats[1]);
     if (value === 1.5) duration = "3/2";
