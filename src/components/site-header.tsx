@@ -45,7 +45,7 @@ export function SiteHeader({ authenticated = false }: { authenticated?: boolean 
             </Button>
           )}
           <div className="inline-flex items-center rounded-md border border-border bg-secondary/60 p-0.5" aria-label={text("选择语言", "Choose language")}>
-            <Languages className="ml-2 size-4 text-muted-foreground" aria-hidden="true" />
+            <Languages className="ml-2 hidden size-4 text-muted-foreground sm:block" aria-hidden="true" />
             {(["zh", "en"] as const).map((option) => (
               <Button
                 key={option}
