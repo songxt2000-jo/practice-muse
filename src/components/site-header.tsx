@@ -9,12 +9,22 @@ export function SiteHeader({ authenticated = false }: { authenticated?: boolean 
   const { language, setLanguage, text } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const showBack = authenticated && pathname !== "/archive";
 
   async function signOut() {
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
     navigate({ to: "/auth", search: { mode: "signin" }, replace: true });
+  }
+
+  function goBack() {
+    // Use the browser stack when the user navigated from inside the app,
+    // otherwise land them on the library.
+    const index = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (index > 0) navigate({ go: -1 });
+    else navigate({ to: "/archive" });
   }
 
   return (
