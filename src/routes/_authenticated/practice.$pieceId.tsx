@@ -280,6 +280,28 @@ function PracticeStudio() {
           ))}
         </div>
 
+        {mode === "ai" && piece?.abc_notation && (
+          <div className="mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={transcribing}
+              onClick={() => {
+                if (!window.confirm(text("重新识谱会覆盖当前的识谱结果（包括你手动修改过的音符），并消耗一次 AI 识谱。确定继续吗？", "Re-transcribing will overwrite the current notation (including your manual edits) and uses one AI transcription. Continue?"))) return;
+                player.stop();
+                void transcribe();
+              }}
+            >
+              {transcribing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Wand2 className="size-4" />
+              )}
+              {transcribing ? text("AI 正在重新识谱…", "AI is re-transcribing…") : text("重新识谱", "Re-transcribe")}
+            </Button>
+          </div>
+        )}
+
         {piece && mode === "follow" && (
           <ScoreFollower
             piece={piece}
