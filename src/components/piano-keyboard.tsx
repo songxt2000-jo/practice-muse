@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useLanguage } from "@/lib/i18n";
 
 const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const FIRST_MIDI = 36; // C2
@@ -21,6 +22,7 @@ export function PianoKeyboard({
   active: number[];
   onKeyPress?: (midi: number) => void;
 }) {
+  const { text } = useLanguage();
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const midis: number[] = [];
   for (let m = FIRST_MIDI; m <= LAST_MIDI; m += 1) midis.push(m);
@@ -60,7 +62,7 @@ export function PianoKeyboard({
     <div
       ref={scrollRef}
       className="h-32 w-full select-none overflow-x-auto overscroll-x-contain rounded-lg bg-ebony p-2 shadow-key"
-      aria-label="C2 到 C7 可横向滑动钢琴键盘"
+      aria-label={text("C2 到 C7 可横向滑动钢琴键盘", "Scrollable piano keyboard from C2 to C7")}
     >
       <div className="relative h-full" style={{ width: `${keyboardWidth}px` }}>
         {whites.map((midi, index) => {

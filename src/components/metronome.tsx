@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Timer } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 function useClicker() {
   const ctxRef = useRef<AudioContext | null>(null);
@@ -33,6 +34,7 @@ export function Metronome({
   /** True while the score is playing, so the metronome follows it. */
   syncing?: boolean;
 }) {
+  const { text } = useLanguage();
   const [on, setOn] = useState(false);
   const [beat, setBeat] = useState(0);
   const click = useClicker();
@@ -68,7 +70,7 @@ export function Metronome({
     <div className="flex items-center gap-3">
       <Button variant={on ? "default" : "secondary"} size="sm" onClick={() => setOn(!on)}>
         <Timer className="size-4" />
-        节拍器 {on ? (syncing ? "跟随乐曲" : "开") : "关"}
+        {text("节拍器", "Metronome")} {on ? (syncing ? text("跟随乐曲", "Synced") : text("开", "On")) : text("关", "Off")}
       </Button>
       <div className="flex gap-1">
         {Array.from({ length: beatsPerBar }).map((_, index) => (
