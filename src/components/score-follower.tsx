@@ -369,7 +369,7 @@ export function FollowerCore({
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    <Loader2 className="mr-2 size-4 animate-spin" /> {text(`正在打开第 ${page} 页…`, `Opening page ${page}…`)}
+                    <Loader2 className="mr-2 !size-4 animate-spin" /> {text(`正在打开第 ${page} 页…`, `Opening page ${page}…`)}
                   </div>
                 )}
 
