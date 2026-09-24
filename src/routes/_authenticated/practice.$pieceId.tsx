@@ -9,7 +9,6 @@ import { useAbcPlayer } from "@/lib/use-abc-player";
 import { parseHumanNote, replaceRange, setDuration, shiftOctave, shiftSemitone, shiftStep } from "@/lib/abc-edit";
 import { PianoKeyboard } from "@/components/piano-keyboard";
 import { Metronome } from "@/components/metronome";
-import { MusicBoxBallerina } from "@/components/music-box-ballerina";
 import { ScoreFollower } from "@/components/score-follower";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -79,7 +78,6 @@ function PracticeStudio() {
   const [hideTimer, setHideTimer] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
-  const [following, setFollowing] = useState(false);
   const [focusMoreOpen, setFocusMoreOpen] = useState(false);
   const [followerStop, setFollowerStop] = useState(0);
   const [followPos, setFollowPos] = useState<{ measure: number | null; total: number }>({ measure: null, total: 0 });
@@ -239,7 +237,6 @@ function PracticeStudio() {
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
-  const focusFollow = focus && mode === "follow";
   const focusAi = focus && mode === "ai";
   const shownMeasure = mode === "follow" ? followPos.measure : player.measure + 1;
   const totalMeasures = mode === "follow" ? followPos.total : player.measureCount;
@@ -365,7 +362,6 @@ function PracticeStudio() {
             tempo={tempo}
             onTempoChange={setTempo}
             onPlayingChange={(on) => {
-              setFollowing(on);
               if (on) player.pause();
             }}
             stopSignal={followerStop}
