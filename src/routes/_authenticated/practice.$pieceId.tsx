@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { recordPiecePractice, finishSession } from "@/lib/practice-session";
 import { useLanguage, useLocalizedDocumentTitle } from "@/lib/i18n";
+import { SiteHeader } from "@/components/site-header";
 
 export const Route = createFileRoute("/_authenticated/practice/$pieceId")({
   head: () => ({
@@ -229,6 +230,7 @@ function PracticeStudio() {
         focus ? "h-screen overflow-y-auto" : ""
       }`}
     >
+      {!focus && <SiteHeader authenticated />}
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

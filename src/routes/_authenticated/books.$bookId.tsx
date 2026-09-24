@@ -214,8 +214,8 @@ function BookPage() {
 
       toast.success(
         preserved > 0
-          ? `拆书完成，共识别 ${sorted.length} 首曲目，其中 ${preserved} 首已识谱的结果原样保留。`
-          : `拆书完成，共识别 ${sorted.length} 首曲目。`,
+          ? text(`拆书完成，共识别 ${sorted.length} 首曲目，其中 ${preserved} 首已识谱的结果原样保留。`, `Organization complete: ${sorted.length} pieces found, with ${preserved} existing transcriptions preserved.`)
+          : text(`拆书完成，共识别 ${sorted.length} 首曲目。`, `Organization complete: ${sorted.length} pieces found.`),
       );
       void queryClient.invalidateQueries({ queryKey: ["pieces", bookId] });
       void queryClient.invalidateQueries({ queryKey: ["book", bookId] });
