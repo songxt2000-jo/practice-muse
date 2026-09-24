@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { Loader2, ScanLine, Music2, BookOpen, Plus, Pencil, Trash2, Check, X } from "lucide-react";
 import { openBookSource } from "@/lib/book-pages";
 import { useLanguage, useLocalizedDocumentTitle } from "@/lib/i18n";
+import { AddToCollection } from "@/components/add-to-collection";
 
 export const Route = createFileRoute("/_authenticated/books/$bookId")({
   head: () => ({
@@ -436,6 +437,7 @@ function BookPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
+                    <AddToCollection pieceId={piece.id} />
                     <Button size="sm" variant="ghost" onClick={() => startEdit(piece)} aria-label={text("修改曲名和页码", "Edit title and pages")}>
                       <Pencil className="size-4" />
                       {text("修改", "Edit")}

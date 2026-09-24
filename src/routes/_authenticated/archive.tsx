@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Upload, BookOpen } from "lucide-react";
 import { useLanguage, useLocalizedDocumentTitle } from "@/lib/i18n";
+import { MyCollections } from "@/components/my-collections";
 
 export const Route = createFileRoute("/_authenticated/archive")({
   head: () => ({
@@ -167,6 +168,7 @@ function ArchivePage() {
               </Link>
             ))}
           </div>
+          <MyCollections />
         </section>
 
         <aside className="surface-salon h-fit rounded-xl p-5">
