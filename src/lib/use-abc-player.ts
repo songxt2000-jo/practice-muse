@@ -97,13 +97,15 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
     pageRef.current = clamped;
     setPageState(clamped);
 
+    // Lines and container share the same transform (even mid-transition), so
+    // their rect difference is the untransformed layout offset.
     const containerTop = container.getBoundingClientRect().top;
-    const currentShift = Number(container.dataset['shift'] ?? "0");
     const first = groups[clamped * per]!;
     const lastIndex = Math.min(groups.length - 1, clamped * per + per - 1);
     const last = groups[lastIndex]!;
-    const top = first.getBoundingClientRect().top - containerTop + currentShift;
-    const bottom = last.getBoundingClientRect().bottom - containerTop + currentShift;
+    const top = first.getBoundingClientRect().top - containerTop;
+    const bottom = last.getBoundingClientRect().bottom - containerTop;
+    if (!first.isConnected || bottom - top <= 0) return;
 
     container.dataset['shift'] = String(top);
     container.style.transform = `translateY(${-top}px)`;
@@ -348,8 +350,20 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
 
   const stop = useCallback(() => {
     playingRef.current = false;
-    synthRef.current?.stop();
-    timerRef.current?.reset();
+    try {
+      synthRef.current?.stop();
+    } catch {
+      /* noop */
+    }
+    try {
+      timerRef.current?.stop();
+      timerRef.current?.reset();
+      timerRef.current?.pause();
+    } catch {
+      /* noop */
+    }
+    synthRef.current?.seek?.(0);
+    applyPage(0);
     setPlaying(false);
     setActiveMidi([]);
     clearHighlight();
