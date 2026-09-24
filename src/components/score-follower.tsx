@@ -189,10 +189,12 @@ export function FollowerCore({
     // next page opening. The lower pane remains stable until it has been played.
     return current + 1 < halfCount ? [current + 1, current] : [Math.max(0, current - 1), current];
   }, [viewHalf, halfCount]);
-  const neededPages = useMemo(
-    () => Array.from(new Set(visibleHalves.map(halfPage))),
-    [visibleHalves, halfPage],
-  );
+  const neededPages = useMemo(() => {
+    const pages = visibleHalves.map(halfPage);
+    const followingPage = Math.max(...pages) + 1;
+    if (followingPage <= lastPage) pages.push(followingPage);
+    return Array.from(new Set(pages));
+  }, [visibleHalves, halfPage, lastPage]);
   useEffect(() => {
     if (!source) return;
     let cancelled = false;
