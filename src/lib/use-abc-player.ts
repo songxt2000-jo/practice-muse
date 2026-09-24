@@ -54,6 +54,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
   const linesPerPageRef = useRef(linesPerPage);
   const abcRef = useRef(abc);
   const clickRef = useRef(onNoteClick);
+  const playingRef = useRef(false);
 
   useEffect(() => {
     loopRef.current = loop;
@@ -216,6 +217,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
           },
           eventCallback: (event: TimingEvent | null) => {
             if (!event) {
+              playingRef.current = false;
               setPlaying(false);
               setActiveMidi([]);
               clearHighlight();
@@ -267,6 +269,8 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
       }
       timerRef.current = null;
       synthRef.current = null;
+      playingRef.current = false;
+      setPlaying(false);
     };
   }, [abc, tempo, containerEl, seekToMs, measureLines, applyPage, clearHighlight, text]);
 
@@ -275,8 +279,6 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [measureLines]);
-
-  const playingRef = useRef(false);
 
   const play = useCallback(async () => {
     if (!synthRef.current || playingRef.current) return;
@@ -319,6 +321,7 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
   }, [clearHighlight]);
 
   const stop = useCallback(() => {
+    playingRef.current = false;
     synthRef.current?.stop();
     timerRef.current?.reset();
     setPlaying(false);
