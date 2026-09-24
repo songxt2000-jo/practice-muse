@@ -275,10 +275,36 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
   }, [abc, tempo, containerEl, seekToMs, measureLines, applyPage, clearHighlight, text]);
 
   useEffect(() => {
-    const onResize = () => measureLines();
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [measureLines]);
+    // Re-measure pages whenever the score's width changes (window resize,
+    // entering/leaving fullscreen focus mode). A late second pass catches
+    // abcjs's own responsive re-layout finishing after the size change.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let lastWidth = -1;
+    const remeasure = () => {
+      measureLines();
+      clearTimeout(timer);
+      timer = setTimeout(measureLines, 300);
+    };
+    const observer =
+      containerEl && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver((entries) => {
+            const width = Math.round(entries[0]?.contentRect.width ?? 0);
+            if (width === lastWidth) return;
+            lastWidth = width;
+            remeasure();
+          })
+        : null;
+    const target = containerEl?.parentElement;
+    if (observer && target) observer.observe(target);
+    window.addEventListener("resize", remeasure);
+    document.addEventListener("fullscreenchange", remeasure);
+    return () => {
+      clearTimeout(timer);
+      observer?.disconnect();
+      window.removeEventListener("resize", remeasure);
+      document.removeEventListener("fullscreenchange", remeasure);
+    };
+  }, [measureLines, containerEl]);
 
   const play = useCallback(async () => {
     if (!synthRef.current || playingRef.current) return;
