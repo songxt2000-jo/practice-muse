@@ -334,7 +334,7 @@ function PracticeStudio() {
           ))}
         </div>
 
-        {mode === "ai" && piece?.abc_notation && (
+        {!focus && mode === "ai" && piece?.abc_notation && (
           <div className="mt-2">
             <Button
               variant="ghost"
