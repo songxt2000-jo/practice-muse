@@ -77,6 +77,8 @@ function PracticeStudio() {
   const [transcribing, setTranscribing] = useState(false);
   const [following, setFollowing] = useState(false);
   const [followerStop, setFollowerStop] = useState(0);
+  const [followPos, setFollowPos] = useState<{ measure: number | null; total: number }>({ measure: null, total: 0 });
+  const onFollowPosition = useCallback((measure: number | null, total: number) => setFollowPos({ measure, total }), []);
   const startedAt = useRef(Date.now());
   const shellRef = useRef<HTMLDivElement | null>(null);
 
@@ -210,14 +212,31 @@ function PracticeStudio() {
   }
 
   async function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      await shellRef.current?.requestFullscreen?.();
+    if (!focus) {
+      // iPad 等不支持元素全屏的浏览器，照样进入专注布局。
+      try {
+        await shellRef.current?.requestFullscreen?.();
+      } catch {
+        /* ignore */
+      }
       setFocus(true);
     } else {
-      await document.exitFullscreen();
+      if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
       setFocus(false);
     }
   }
+
+  useEffect(() => {
+    const onChange = () => {
+      if (!document.fullscreenElement) setFocus(false);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  const focusFollow = focus && mode === "follow";
+  const shownMeasure = mode === "follow" ? followPos.measure : player.measure + 1;
+  const totalMeasures = mode === "follow" ? followPos.total : player.measureCount;
 
   if (pieceQuery.isLoading) {
     return <div className="p-10 text-center text-muted-foreground">{text("载入中…", "Loading…")}</div>;
@@ -228,12 +247,46 @@ function PracticeStudio() {
       {!focus && <SiteHeader authenticated />}
       <div
         ref={shellRef}
-        className={`min-h-screen bg-background px-5 py-6 ${
-          focus ? "h-screen overflow-y-auto" : ""
-        }`}
+        className={
+          focusFollow
+            ? "focus-room flex h-[100dvh] flex-col"
+            : focus
+              ? "focus-room h-[100dvh] overflow-y-auto"
+              : "min-h-screen bg-background px-5 py-6"
+        }
       >
-        <div className="mx-auto max-w-5xl">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        {focus && (
+          <header className="flex h-[72px] shrink-0 items-center gap-4 border-b border-[var(--fr-line)] px-5 pt-[env(safe-area-inset-top,0px)]">
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={text("退出专注", "Leave focus")}
+              className="flex size-11 items-center justify-center rounded-full text-[var(--fr-ink)]"
+            >
+              <ChevronLeft className="size-6" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-2xl italic leading-tight" style={{ fontFamily: "var(--font-display)" }}>
+                {piece?.title}
+              </div>
+              <div className="truncate text-xs text-[var(--fr-muted)]">
+                {piece?.composer ?? text("未知作曲家", "Unknown composer")}
+                {piece?.start_page ? text(` · 第 ${piece.start_page} 页`, ` · Page ${piece.start_page}`) : ""}
+              </div>
+            </div>
+            {totalMeasures > 0 && (
+              <div className="flex items-baseline gap-1.5 tabular-nums">
+                <span className="text-xs text-[var(--fr-muted)]">{text("小节", "Bar")}</span>
+                <span className="text-[28px] font-semibold" style={{ fontFamily: "var(--font-display)" }}>
+                  {shownMeasure ?? "–"}
+                </span>
+                <span className="text-sm text-[var(--fr-muted)]">/ {totalMeasures}</span>
+              </div>
+            )}
+          </header>
+        )}
+        <div className={focusFollow ? "flex min-h-0 flex-1 flex-col" : focus ? "mx-auto max-w-5xl px-5 py-6" : "mx-auto max-w-5xl"}>
+        <div className={focus ? "hidden" : "flex flex-wrap items-start justify-between gap-4"}>
           <div>
             <h1 className="text-3xl">{piece?.title}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -258,7 +311,7 @@ function PracticeStudio() {
           </div>
         </div>
 
-        <div className="mt-4 inline-flex rounded-full border border-border p-1 text-sm">
+        <div className={focus ? "hidden" : "mt-4 inline-flex rounded-full border border-border p-1 text-sm"}>
           {([
             ["follow", text("原谱跟随", "Follow original")],
             ["ai", text("AI 识谱", "AI notation")],
@@ -312,10 +365,12 @@ function PracticeStudio() {
               if (on) player.pause();
             }}
             stopSignal={followerStop}
+            focus={focus}
+            onPosition={onFollowPosition}
           />
         )}
 
-        {focus && (
+        {focus && !focusFollow && (
           <MusicBoxBallerina playing={player.playing || following} className="mt-6" />
         )}
 

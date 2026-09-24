@@ -10,7 +10,7 @@ import { Metronome } from "@/components/metronome";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { ChevronLeft, ChevronRight, Loader2, Pause, Play, RotateCcw, Square } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Minus, MoreHorizontal, Pause, Play, Plus, RotateCcw, SkipBack, Square } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
 /** What we keep in `pieces.score_layout`. Bump `version` when the shape changes. */
@@ -36,6 +36,10 @@ type Props = {
   onPlayingChange?: (playing: boolean) => void;
   /** Bump this number to stop the cursor from outside, e.g. when audio playback starts. */
   stopSignal?: number;
+  /** Focus-room layout: score fills the screen, one bar of big controls underneath. */
+  focus?: boolean;
+  /** Reports the printed measure number under the cursor (null when idle) and the total. */
+  onPosition?: (measure: number | null, total: number) => void;
 };
 
 type CoreProps = Omit<Props, "piece"> & {
@@ -117,6 +121,8 @@ export function FollowerCore({
   onTempoChange,
   onPlayingChange,
   stopSignal,
+  focus = false,
+  onPosition,
 }: CoreProps) {
   const { text } = useLanguage();
   const onPlayingRef = useRef(onPlayingChange);
@@ -325,6 +331,13 @@ export function FollowerCore({
   const pickupShown = settings.pickupBeats > 0;
   const printedNumber = (index: number) => (pickupShown ? index : index + 1);
 
+  const totalPrinted = pickupShown ? Math.max(0, measures.length - 1) : measures.length;
+  const shownMeasure = !counting && measure ? printedNumber(measure.index) : null;
+  useEffect(() => {
+    onPosition?.(shownMeasure, totalPrinted);
+  }, [onPosition, shownMeasure, totalPrinted]);
+  const [moreOpen, setMoreOpen] = useState(false);
+
   const jumpTo = (measureIndex: number) => {
     const s = steps.findIndex((st) => st.measure === measureIndex);
     if (s < 0) return;
@@ -334,18 +347,8 @@ export function FollowerCore({
   };
 
   // ---- render ----
-  return (
-    <div className="surface-salon mt-6 rounded-xl p-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-lg" style={{ fontFamily: "var(--font-display)" }}>
-          {text("原谱跟随", "Follow original")}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {text("光标按拍子走在你的原谱上，不用 AI", "A beat-synced cursor follows your original score without AI")}
-        </span>
-      </div>
-
-      <div className="score-sheet relative mt-4 overflow-hidden rounded-lg">
+  const sheet = (
+    <div className={focus ? "relative overflow-hidden rounded-md bg-[var(--fr-paper)] shadow-[0_1px_2px_rgba(30,42,50,.08),0_12px_32px_rgba(30,42,50,.08)]" : "score-sheet relative mt-4 overflow-hidden rounded-lg"}>
         <div className="grid gap-px bg-border">
           {visibleHalves.map((half, slot) => {
             const page = halfPage(half);
@@ -425,79 +428,10 @@ export function FollowerCore({
         )}
       </div>
 
-      {halfCount > 1 && (
-        <div className="mt-2 flex items-center justify-center gap-3">
-          <Button variant="ghost" size="sm" disabled={viewHalf <= 0 || playing} onClick={() => setViewHalf((half) => Math.max(0, half - 1))}>
-            <ChevronLeft className="size-4" />
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            {text(`第 ${halfPage(viewHalf)} 页${viewHalf % 2 ? "下半页" : "上半页"} · 半页预翻`, `Page ${halfPage(viewHalf)}, ${viewHalf % 2 ? "lower" : "upper"} half · preview turn`)}
-          </span>
-          <Button variant="ghost" size="sm" disabled={viewHalf >= halfCount - 1 || playing} onClick={() => setViewHalf((half) => Math.min(halfCount - 1, half + 1))}>
-            <ChevronRight className="size-4" />
-          </Button>
-        </div>
-      )}
+  );
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Button onClick={() => (playing ? pause() : resume())} disabled={!steps.length}>
-          {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
-          {playing ? text("暂停", "Pause") : text("开始", "Start")}
-        </Button>
-        <Button variant="secondary" onClick={rewind} disabled={!steps.length}>
-          <Square className="size-4" />
-          {text("回到起点", "Restart")}
-        </Button>
-
-        <Metronome
-          bpm={tempo}
-          beatsPerBar={settings.beatsPerMeasure}
-          syncBeat={Math.floor(beat)}
-          syncing={playing}
-          forceSound={counting}
-        />
-
-        <div className="flex items-center gap-1.5" aria-label={text("拍点", "Beats")}>
-          {Array.from({ length: settings.beatsPerMeasure }, (_, i) => (
-            <span
-              key={i}
-              className={`size-3 rounded-full border transition-colors ${
-                i === beatInMeasure
-                  ? counting
-                    ? "border-sky-400 bg-sky-400"
-                    : i === 0
-                      ? "border-amber-400 bg-amber-400"
-                      : "border-amber-300 bg-amber-300/80"
-                  : "border-border bg-transparent"
-              }`}
-            />
-          ))}
-        </div>
-        <span className="text-xs tabular-nums text-muted-foreground">
-          {counting
-            ? text("预备拍…", "Count-in…")
-            : measure
-              ? text(`第 ${printedNumber(measure.index)} 小节${measure.volta ? `（第 ${measure.volta} 房子）` : ""}`, `Measure ${printedNumber(measure.index)}${measure.volta ? ` (ending ${measure.volta})` : ""}`)
-              : text(`${tempo} BPM · 点谱面上任意小节从那里开始`, `${tempo} BPM · Select any measure to start there`)}
-        </span>
-      </div>
-
-      <div className="mt-4 max-w-md">
-        <div className="flex items-center justify-between text-sm">
-          <span>{text("速度", "Tempo")}</span>
-          <span className="tabular-nums text-primary">{tempo} BPM</span>
-        </div>
-        <Slider
-          className="mt-3"
-          min={40}
-          max={208}
-          step={1}
-          value={[tempo]}
-          onValueChange={([value]) => onTempoChange(value ?? 90)}
-        />
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-4 text-sm">
+  const settingsPanel = (
+    <div className={focus ? "flex flex-wrap items-center gap-x-6 gap-y-3 text-sm" : "mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-border pt-4 text-sm"}>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground">{text("每小节", "Meter")}</span>
           {METERS.map((n) => (
@@ -567,6 +501,179 @@ export function FollowerCore({
           {text("重新找小节线", "Detect bar lines")}
         </Button>
       </div>
+  );
+
+  const beatDots = (
+        <div className="flex items-center gap-1.5" aria-label={text("拍点", "Beats")}>
+          {Array.from({ length: settings.beatsPerMeasure }, (_, i) => (
+            <span
+              key={i}
+              className={`size-3 rounded-full border transition-colors ${
+                i === beatInMeasure
+                  ? counting
+                    ? "border-sky-400 bg-sky-400"
+                    : i === 0
+                      ? "border-amber-400 bg-amber-400"
+                      : "border-amber-300 bg-amber-300/80"
+                  : "border-border bg-transparent"
+              }`}
+            />
+          ))}
+        </div>
+  );
+
+  if (focus) {
+    const nudge = (d: number) => onTempoChange(Math.min(208, Math.max(40, tempo + d)));
+    const round = "flex size-12 shrink-0 items-center justify-center rounded-full border border-[var(--fr-line)] bg-[var(--fr-paper)] text-[var(--fr-ink)] disabled:opacity-40";
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          <div className="mx-auto max-w-3xl">{sheet}</div>
+          {halfCount > 1 && !playing && (
+            <div className="mt-3 flex items-center justify-center gap-3 text-xs text-[var(--fr-muted)]">
+              <button type="button" className={round} disabled={viewHalf <= 0} onClick={() => setViewHalf((half) => Math.max(0, half - 1))} aria-label={text("上半页", "Previous half page")}>
+                <ChevronLeft className="size-5" />
+              </button>
+              {text(`第 ${halfPage(viewHalf)} 页${viewHalf % 2 ? "下半" : "上半"}`, `Page ${halfPage(viewHalf)}, ${viewHalf % 2 ? "lower" : "upper"} half`)}
+              <button type="button" className={round} disabled={viewHalf >= halfCount - 1} onClick={() => setViewHalf((half) => Math.min(halfCount - 1, half + 1))} aria-label={text("下半页", "Next half page")}>
+                <ChevronRight className="size-5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {moreOpen && (
+          <div className="border-t border-[var(--fr-line)] bg-[var(--fr-bar)] px-6 py-4">
+            <div className="mx-auto flex max-w-3xl flex-col gap-4">
+              <Metronome
+                bpm={tempo}
+                beatsPerBar={settings.beatsPerMeasure}
+                syncBeat={Math.floor(beat)}
+                syncing={playing}
+                forceSound={counting}
+              />
+              {settingsPanel}
+            </div>
+          </div>
+        )}
+
+        <footer className="flex items-center gap-5 border-t border-[var(--fr-line)] bg-[var(--fr-bar)] px-6 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
+          <button
+            type="button"
+            onClick={() => (playing ? pause() : resume())}
+            disabled={!steps.length}
+            aria-label={playing ? text("暂停", "Pause") : text("开始", "Start")}
+            className="flex size-[76px] shrink-0 items-center justify-center rounded-full bg-[var(--fr-ink)] text-[var(--fr-gold)] disabled:opacity-40"
+          >
+            {playing ? <Pause className="size-7 fill-current" /> : <Play className="ml-1 size-7 fill-current" />}
+          </button>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-[var(--fr-muted)]">{text("速度", "Tempo")}</span>
+            <div className="flex items-center gap-1">
+              <button type="button" className={round} onClick={() => nudge(-2)} aria-label={text("减慢", "Slower")}>
+                <Minus className="size-5" />
+              </button>
+              <span className="w-16 text-center text-2xl font-semibold tabular-nums" style={{ fontFamily: "var(--font-display)" }}>
+                ♩{tempo}
+              </span>
+              <button type="button" className={round} onClick={() => nudge(2)} aria-label={text("加快", "Faster")}>
+                <Plus className="size-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="hidden sm:block">{beatDots}</div>
+          <div className="flex-1" />
+
+          <button type="button" className={round} onClick={rewind} disabled={!steps.length} aria-label={text("回到起点", "Restart")}>
+            <SkipBack className="size-5" />
+          </button>
+          <button
+            type="button"
+            className={round}
+            onClick={() => setMoreOpen((on) => !on)}
+            aria-expanded={moreOpen}
+            aria-label={text("更多设置", "More settings")}
+          >
+            <MoreHorizontal className="size-5" />
+          </button>
+        </footer>
+      </div>
+    );
+  }
+
+  return (
+    <div className="surface-salon mt-6 rounded-xl p-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-lg" style={{ fontFamily: "var(--font-display)" }}>
+          {text("原谱跟随", "Follow original")}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          {text("光标按拍子走在你的原谱上，不用 AI", "A beat-synced cursor follows your original score without AI")}
+        </span>
+      </div>
+
+      {sheet}
+
+      {halfCount > 1 && (
+        <div className="mt-2 flex items-center justify-center gap-3">
+          <Button variant="ghost" size="sm" disabled={viewHalf <= 0 || playing} onClick={() => setViewHalf((half) => Math.max(0, half - 1))}>
+            <ChevronLeft className="size-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {text(`第 ${halfPage(viewHalf)} 页${viewHalf % 2 ? "下半页" : "上半页"} · 半页预翻`, `Page ${halfPage(viewHalf)}, ${viewHalf % 2 ? "lower" : "upper"} half · preview turn`)}
+          </span>
+          <Button variant="ghost" size="sm" disabled={viewHalf >= halfCount - 1 || playing} onClick={() => setViewHalf((half) => Math.min(halfCount - 1, half + 1))}>
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button onClick={() => (playing ? pause() : resume())} disabled={!steps.length}>
+          {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+          {playing ? text("暂停", "Pause") : text("开始", "Start")}
+        </Button>
+        <Button variant="secondary" onClick={rewind} disabled={!steps.length}>
+          <Square className="size-4" />
+          {text("回到起点", "Restart")}
+        </Button>
+
+        <Metronome
+          bpm={tempo}
+          beatsPerBar={settings.beatsPerMeasure}
+          syncBeat={Math.floor(beat)}
+          syncing={playing}
+          forceSound={counting}
+        />
+
+        {beatDots}
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {counting
+            ? text("预备拍…", "Count-in…")
+            : measure
+              ? text(`第 ${printedNumber(measure.index)} 小节${measure.volta ? `（第 ${measure.volta} 房子）` : ""}`, `Measure ${printedNumber(measure.index)}${measure.volta ? ` (ending ${measure.volta})` : ""}`)
+              : text(`${tempo} BPM · 点谱面上任意小节从那里开始`, `${tempo} BPM · Select any measure to start there`)}
+        </span>
+      </div>
+
+      <div className="mt-4 max-w-md">
+        <div className="flex items-center justify-between text-sm">
+          <span>{text("速度", "Tempo")}</span>
+          <span className="tabular-nums text-primary">{tempo} BPM</span>
+        </div>
+        <Slider
+          className="mt-3"
+          min={40}
+          max={208}
+          step={1}
+          value={[tempo]}
+          onValueChange={([value]) => onTempoChange(value ?? 90)}
+        />
+      </div>
+
+      {settingsPanel}
     </div>
   );
 }

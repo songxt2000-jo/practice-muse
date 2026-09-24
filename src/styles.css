@@ -156,3 +156,16 @@
 .center-flash-pill {
   animation: center-flash 1.9s ease forwards;
 }
+
+/* 专注模式：废墟里的白天。偏青的混凝土底、石墨色字，只有光标和播放键是那束暖光。 */
+.focus-room {
+  --fr-bg: #e6ebec;
+  --fr-bar: #eef2f2;
+  --fr-line: #d3dadc;
+  --fr-ink: #1e2a32;
+  --fr-muted: #5b6970;
+  --fr-paper: #fbfbf8;
+  --fr-gold: #e8c466;
+  background: var(--fr-bg);
+  color: var(--fr-ink);
+}
