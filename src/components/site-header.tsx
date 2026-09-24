@@ -30,7 +30,21 @@ export function SiteHeader({ authenticated = false }: { authenticated?: boolean 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
       <div className="mx-auto grid min-h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-5">
-        <div className="flex items-center justify-start">
+        <div className="flex items-center justify-start gap-1 sm:gap-2">
+          {showBack && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 shrink-0 gap-1 px-2"
+              onClick={goBack}
+              title={text("返回", "Back")}
+              aria-label={text("返回上一页", "Go back")}
+            >
+              <ChevronLeft className="size-4" aria-hidden="true" />
+              <span className="hidden sm:inline">{text("返回", "Back")}</span>
+            </Button>
+          )}
           <div className="inline-flex items-center rounded-md border border-border bg-secondary/60 p-0.5" aria-label={text("选择语言", "Choose language")}>
             <Languages className="ml-2 size-4 text-muted-foreground" aria-hidden="true" />
             {(["zh", "en"] as const).map((option) => (
