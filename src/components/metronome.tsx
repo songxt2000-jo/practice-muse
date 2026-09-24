@@ -26,6 +26,7 @@ export function Metronome({
   beatsPerBar = 4,
   syncBeat = null,
   syncing = false,
+  forceSound = false,
 }: {
   bpm: number;
   beatsPerBar?: number;
@@ -33,6 +34,8 @@ export function Metronome({
   syncBeat?: number | null;
   /** True while the score is playing, so the metronome follows it. */
   syncing?: boolean;
+  /** Sound synced beats even while the metronome toggle is off (for count-in). */
+  forceSound?: boolean;
 }) {
   const { text } = useLanguage();
   const [on, setOn] = useState(false);
@@ -60,11 +63,11 @@ export function Metronome({
 
   // Locked to the playing score's beat clock.
   useEffect(() => {
-    if (!on || !syncing || syncBeat === null) return;
+    if ((!on && !forceSound) || !syncing || syncBeat === null) return;
     const position = ((syncBeat % beatsPerBar) + beatsPerBar) % beatsPerBar;
     clickRef.current(position === 0);
     setBeat(position);
-  }, [on, syncing, syncBeat, beatsPerBar]);
+  }, [on, forceSound, syncing, syncBeat, beatsPerBar]);
 
   return (
     <div className="flex items-center gap-3">
@@ -79,7 +82,7 @@ export function Metronome({
             className="size-2 rounded-full transition-colors"
             style={{
               backgroundColor:
-                on && beat === index ? "var(--color-primary)" : "var(--color-border)",
+                (on || forceSound) && beat === index ? "var(--color-primary)" : "var(--color-border)",
             }}
           />
         ))}
