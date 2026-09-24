@@ -276,8 +276,18 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
     return () => window.removeEventListener("resize", onResize);
   }, [measureLines]);
 
+  const playingRef = useRef(false);
+
   const play = useCallback(async () => {
-    if (!synthRef.current) return;
+    if (!synthRef.current || playingRef.current) return;
+    playingRef.current = true;
+    // Cancel any stray animation loop before starting a fresh one, otherwise
+    // a second loop keeps moving keys/highlights after pause silences audio.
+    try {
+      timerRef.current?.pause();
+    } catch {
+      /* noop */
+    }
     // `start()` already resumes from the paused position — calling resume()
     // as well kicks off a second overlapping voice that pause() can't stop.
     synthRef.current.start();
@@ -286,15 +296,26 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
   }, []);
 
   const pause = useCallback(() => {
+    playingRef.current = false;
     try {
       synthRef.current?.pause();
     } catch {
       synthRef.current?.stop();
     }
-    timerRef.current?.pause();
+    try {
+      timerRef.current?.pause();
+    } catch {
+      /* noop */
+    }
     setPlaying(false);
     setActiveMidi([]);
     clearHighlight();
+    // A callback already queued for this frame may re-highlight; clear again.
+    requestAnimationFrame(() => {
+      if (playingRef.current) return;
+      setActiveMidi([]);
+      clearHighlight();
+    });
   }, [clearHighlight]);
 
   const stop = useCallback(() => {
