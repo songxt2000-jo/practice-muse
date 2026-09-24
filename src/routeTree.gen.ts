@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedArchiveRouteImport } from './routes/_authenticated/archive'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedBooksBookIdRouteImport } from './routes/_authenticated/books.$bookId'
+import { Route as AuthenticatedCollectionsCollectionIdRouteImport } from './routes/_authenticated/collections.$collectionId'
 import { Route as AuthenticatedPracticePieceIdRouteImport } from './routes/_authenticated/practice.$pieceId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,12 @@ const AuthenticatedBooksBookIdRoute =
     path: '/books/$bookId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCollectionsCollectionIdRoute =
+  AuthenticatedCollectionsCollectionIdRouteImport.update({
+    id: '/collections/$collectionId',
+    path: '/collections/$collectionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPracticePieceIdRoute =
   AuthenticatedPracticePieceIdRouteImport.update({
     id: '/practice/$pieceId',
@@ -60,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/archive': typeof AuthenticatedArchiveRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/books/$bookId': typeof AuthenticatedBooksBookIdRoute
+  '/collections/$collectionId': typeof AuthenticatedCollectionsCollectionIdRoute
   '/practice/$pieceId': typeof AuthenticatedPracticePieceIdRoute
 }
 export interface FileRoutesByTo {
@@ -68,6 +76,7 @@ export interface FileRoutesByTo {
   '/archive': typeof AuthenticatedArchiveRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/books/$bookId': typeof AuthenticatedBooksBookIdRoute
+  '/collections/$collectionId': typeof AuthenticatedCollectionsCollectionIdRoute
   '/practice/$pieceId': typeof AuthenticatedPracticePieceIdRoute
 }
 export interface FileRoutesById {
@@ -78,6 +87,7 @@ export interface FileRoutesById {
   '/_authenticated/archive': typeof AuthenticatedArchiveRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/books/$bookId': typeof AuthenticatedBooksBookIdRoute
+  '/_authenticated/collections/$collectionId': typeof AuthenticatedCollectionsCollectionIdRoute
   '/_authenticated/practice/$pieceId': typeof AuthenticatedPracticePieceIdRoute
 }
 export interface FileRouteTypes {
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/history'
     | '/books/$bookId'
+    | '/collections/$collectionId'
     | '/practice/$pieceId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/archive'
     | '/history'
     | '/books/$bookId'
+    | '/collections/$collectionId'
     | '/practice/$pieceId'
   id:
     | '__root__'
@@ -105,6 +117,7 @@ export interface FileRouteTypes {
     | '/_authenticated/archive'
     | '/_authenticated/history'
     | '/_authenticated/books/$bookId'
+    | '/_authenticated/collections/$collectionId'
     | '/_authenticated/practice/$pieceId'
   fileRoutesById: FileRoutesById
 }
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBooksBookIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/collections/$collectionId': {
+      id: '/_authenticated/collections/$collectionId'
+      path: '/collections/$collectionId'
+      fullPath: '/collections/$collectionId'
+      preLoaderRoute: typeof AuthenticatedCollectionsCollectionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/practice/$pieceId': {
       id: '/_authenticated/practice/$pieceId'
       path: '/practice/$pieceId'
@@ -172,6 +192,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedArchiveRoute: typeof AuthenticatedArchiveRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedBooksBookIdRoute: typeof AuthenticatedBooksBookIdRoute
+  AuthenticatedCollectionsCollectionIdRoute: typeof AuthenticatedCollectionsCollectionIdRoute
   AuthenticatedPracticePieceIdRoute: typeof AuthenticatedPracticePieceIdRoute
 }
 
@@ -179,6 +200,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedArchiveRoute: AuthenticatedArchiveRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedBooksBookIdRoute: AuthenticatedBooksBookIdRoute,
+  AuthenticatedCollectionsCollectionIdRoute:
+    AuthenticatedCollectionsCollectionIdRoute,
   AuthenticatedPracticePieceIdRoute: AuthenticatedPracticePieceIdRoute,
 }
 
