@@ -41,11 +41,11 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
-  const [flash, setFlash] = useState<string | null>(null);
+  const [flash, setFlash] = useState<{ name: string; added: boolean } | null>(null);
   const flashTimer = useRef<number | null>(null);
 
-  function showFlash(name: string) {
-    setFlash(name);
+  function showFlash(name: string, added: boolean) {
+    setFlash({ name, added });
     if (flashTimer.current) window.clearTimeout(flashTimer.current);
     flashTimer.current = window.setTimeout(() => setFlash(null), 1900);
   }
@@ -72,10 +72,8 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
       }
       await qc.invalidateQueries({ queryKey: ["collections"] });
       void qc.invalidateQueries({ queryKey: ["collection", collectionId] });
-      if (!inIt) {
-        setOpen(false);
-        showFlash(name);
-      }
+      setOpen(false);
+      showFlash(name, !inIt);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : text("操作失败", "Something went wrong"));
     } finally {
