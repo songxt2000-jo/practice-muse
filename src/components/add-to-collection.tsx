@@ -50,7 +50,7 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
     flashTimer.current = window.setTimeout(() => setFlash(null), 1900);
   }
 
-  async function toggle(collectionId: string, inIt: boolean, count: number) {
+  async function toggle(collectionId: string, name: string, inIt: boolean, count: number) {
     setBusy(true);
     try {
       if (inIt) {
@@ -72,6 +72,10 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
       }
       await qc.invalidateQueries({ queryKey: ["collections"] });
       void qc.invalidateQueries({ queryKey: ["collection", collectionId] });
+      if (!inIt) {
+        setOpen(false);
+        showFlash(name);
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : text("操作失败", "Something went wrong"));
     } finally {
@@ -86,8 +90,7 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
     try {
       const id = await createCollection(name);
       setNewName("");
-      await toggle(id, false, 0);
-      toast.success(text(`已加入「${name}」`, `Added to “${name}”`));
+      await toggle(id, name, false, 0);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : text("创建失败", "Could not create"));
       setBusy(false);
