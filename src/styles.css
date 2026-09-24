@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system — "Piano Salon"
- * Ebony & ivory with brass candlelight. All colors are oklch tokens.
+ * Design system — "Morning Mist"
+ * Airy light blue & soft grey with translucent glass surfaces. All colors are oklch tokens.
  */
 
 @theme inline {
@@ -50,49 +50,49 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --font-display: "Cormorant Garamond", Georgia, serif;
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --shadow-salon: 0 24px 60px -24px oklch(0 0 0 / 0.65);
-  --shadow-key: 0 4px 10px -2px oklch(0 0 0 / 0.5);
+  --shadow-salon: 0 20px 50px -24px oklch(0.62 0.06 245 / 0.25);
+  --shadow-key: 0 4px 10px -2px oklch(0.6 0.05 245 / 0.25);
 }
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.19 0.018 65);
-  --foreground: oklch(0.94 0.012 85);
-  --card: oklch(0.24 0.02 62);
-  --card-foreground: oklch(0.94 0.012 85);
-  --popover: oklch(0.22 0.02 62);
-  --popover-foreground: oklch(0.94 0.012 85);
-  --primary: oklch(0.78 0.13 78);
-  --primary-foreground: oklch(0.21 0.03 60);
-  --secondary: oklch(0.3 0.022 62);
-  --secondary-foreground: oklch(0.93 0.012 85);
-  --muted: oklch(0.28 0.018 62);
-  --muted-foreground: oklch(0.72 0.02 78);
-  --accent: oklch(0.42 0.06 35);
-  --accent-foreground: oklch(0.96 0.01 85);
-  --destructive: oklch(0.58 0.2 25);
-  --destructive-foreground: oklch(0.97 0.01 85);
-  --border: oklch(0.34 0.02 62);
-  --input: oklch(0.33 0.02 62);
-  --ring: oklch(0.78 0.13 78);
-  --ivory: oklch(0.97 0.012 90);
-  --ebony: oklch(0.17 0.012 62);
-  --brass: oklch(0.78 0.13 78);
-  --score: oklch(0.98 0.008 92);
-  --score-foreground: oklch(0.2 0.01 62);
-  --sidebar: oklch(0.22 0.02 62);
-  --sidebar-foreground: oklch(0.94 0.012 85);
-  --sidebar-primary: oklch(0.78 0.13 78);
-  --sidebar-primary-foreground: oklch(0.21 0.03 60);
-  --sidebar-accent: oklch(0.3 0.022 62);
-  --sidebar-accent-foreground: oklch(0.94 0.012 85);
-  --sidebar-border: oklch(0.34 0.02 62);
-  --sidebar-ring: oklch(0.78 0.13 78);
-}
-
-.dark {
-  --background: oklch(0.19 0.018 65);
-  --foreground: oklch(0.94 0.012 85);
+  /* airy blue-grey canvas */
+  --background: oklch(0.965 0.012 240);
+  --foreground: oklch(0.32 0.03 255);
+  /* translucent glass cards */
+  --card: oklch(1 0 0 / 0.62);
+  --card-foreground: oklch(0.32 0.03 255);
+  --popover: oklch(0.99 0.004 240 / 0.92);
+  --popover-foreground: oklch(0.32 0.03 255);
+  /* soft sky blue accent */
+  --primary: oklch(0.66 0.11 240);
+  --primary-foreground: oklch(0.99 0.005 240);
+  --secondary: oklch(0.93 0.015 240 / 0.8);
+  --secondary-foreground: oklch(0.38 0.04 250);
+  --muted: oklch(0.94 0.012 240 / 0.7);
+  --muted-foreground: oklch(0.55 0.025 250);
+  --accent: oklch(0.92 0.03 240);
+  --accent-foreground: oklch(0.42 0.07 250);
+  --destructive: oklch(0.62 0.19 25);
+  --destructive-foreground: oklch(0.98 0.005 240);
+  --border: oklch(0.88 0.015 240 / 0.8);
+  --input: oklch(0.88 0.015 240);
+  --ring: oklch(0.66 0.11 240);
+  /* physical piano keys stay true to material */
+  --ivory: oklch(0.98 0.006 95);
+  --ebony: oklch(0.24 0.02 255);
+  --brass: oklch(0.78 0.12 85);
+  /* sheet paper */
+  --score: oklch(0.995 0.004 95);
+  --score-foreground: oklch(0.28 0.02 255);
+  --sidebar: oklch(0.97 0.01 240 / 0.7);
+  --sidebar-foreground: oklch(0.32 0.03 255);
+  --sidebar-primary: oklch(0.66 0.11 240);
+  --sidebar-primary-foreground: oklch(0.99 0.005 240);
+  --sidebar-accent: oklch(0.93 0.015 240);
+  --sidebar-accent-foreground: oklch(0.38 0.04 250);
+  --sidebar-border: oklch(0.88 0.015 240 / 0.8);
+  --sidebar-ring: oklch(0.66 0.11 240);
 }
 
 @layer base {
@@ -104,11 +104,10 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    background-image: radial-gradient(
-      120% 80% at 50% -10%,
-      oklch(0.28 0.035 62) 0%,
-      transparent 60%
-    );
+    background-image:
+      radial-gradient(90% 60% at 15% -5%, oklch(0.9 0.05 235 / 0.55) 0%, transparent 60%),
+      radial-gradient(80% 55% at 90% 0%, oklch(0.92 0.04 265 / 0.45) 0%, transparent 55%),
+      radial-gradient(70% 60% at 50% 110%, oklch(0.9 0.03 220 / 0.4) 0%, transparent 60%);
     background-attachment: fixed;
   }
 
@@ -124,12 +123,14 @@
   background-color: var(--color-card);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-salon);
+  backdrop-filter: blur(16px) saturate(150%);
 }
 
 @utility score-sheet {
   background-color: var(--color-score);
   color: var(--color-score-foreground);
   border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px -12px oklch(0.6 0.05 245 / 0.3);
 }
 
 /* abcjs renders inline SVG: keep it readable on the ivory sheet */
@@ -139,10 +140,9 @@
 }
 .score-sheet .abcjs-note_selected,
 .score-sheet .abcjs-highlight {
-  fill: oklch(0.55 0.19 35);
+  fill: oklch(0.58 0.16 245);
 }
 .score-sheet .abcjs-cursor {
-  stroke: oklch(0.55 0.19 35);
+  stroke: oklch(0.58 0.16 245);
   stroke-width: 2;
 }
-
