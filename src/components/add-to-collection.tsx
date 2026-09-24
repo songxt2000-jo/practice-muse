@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ListPlus, Plus } from "lucide-react";
+import { Check, ListPlus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/lib/i18n";
@@ -141,8 +141,10 @@ export function AddToCollection({ pieceId }: { pieceId: string }) {
       {flash && (
         <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center">
           <div className="center-flash-pill flex items-center gap-2 rounded-full border border-primary/30 bg-primary/95 px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-lg">
-            <Check className="size-4" />
-            {text(`已添加到「${flash}」`, `Added to “${flash}”`)}
+            {flash.added ? <Check className="size-4" /> : <X className="size-4" />}
+            {flash.added
+              ? text(`已添加到「${flash.name}」`, `Added to “${flash.name}”`)
+              : text(`已从「${flash.name}」移除`, `Removed from “${flash.name}”`)}
           </div>
         </div>
       )}
