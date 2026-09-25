@@ -13,3 +13,7 @@ Generated with built-in OpenAI imagegen, using the approved courtyard as an edit
 - piano-macro.png: high oblique photographic close-up of the same piano's gold plate, copper and steel strings, tuning pins, soundboard and wool-felt hammers. Left third shadowy blurred courtyard for interface, matching golden sunlight and forest colors.
 
 All three are 16:9 image plates. The current page uses photographic-scene.tsx, not the older procedural Three.js piano.
+
+## Fresh courtyard revision
+
+The three `*-fresh.png` plates are precise edits of the photographic piano shots above. The built-in OpenAI image generator removed most ground-level ferns, weeds, fallen leaves, damp grime, and visual clutter while preserving the instruments, ancient tree, architecture, framing, and light direction. Broad areas of pale dry stone are visible again, with sparse moss in joints and restrained wall ivy. Greens and golden daylight were lifted slightly for a cleaner, more transparent atmosphere.

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n";
 
 export type GardenStage = 0 | 1 | 2;
-const frames = ["piano-wide.png", "piano-open.png", "piano-macro.png"];
+const frames = ["piano-wide-fresh.png", "piano-open-fresh.png", "piano-macro-fresh.png"];
 
 type Props = {
   stage: GardenStage;
