@@ -456,7 +456,7 @@ export function GardenHome() {
           </div>
         )}
       </main>
-      {stage > 0 && ({stage > 0 && (<footer className="garden-footer">
+      {stage > 0 && (<footer className="garden-footer">
         <div className="garden-chapter">
           <span>0{stage + 1}</span>
           <i />
