@@ -180,6 +180,10 @@
   background: #c9b68125;
   border-color: var(--garden-gold);
 }
+.garden-home .garden-primary.garden-plain,
+.garden-home .garden-primary.garden-plain:hover {
+  border: none;
+}
 .garden-home[data-stage="0"] .garden-primary {
   margin-top: 25px;
 }

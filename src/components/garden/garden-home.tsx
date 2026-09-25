@@ -255,7 +255,7 @@ export function GardenHome() {
                 <br />
                 {text("今天的第一颗音符，从这里开始。", "Your first note of today begins here.")}
               </p>
-              <Button className="garden-primary" onClick={() => setStage(1)}>
+              <Button className="garden-primary garden-plain" onClick={() => setStage(1)}>
                 {text("靠近钢琴", "APPROACH")}
                 <ArrowUpRight />
               </Button>
