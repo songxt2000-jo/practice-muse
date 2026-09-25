@@ -88,8 +88,8 @@ export function PhotographicScene({
                 onClick={onApproach}
                 aria-label={text("靠近钢琴", "Approach the piano")}
               >
-                <span className="garden-photo-marker">
-                  ＋<small>APPROACH</small>
+                <span className="garden-photo-marker" aria-hidden="true">
+                  ＋
                 </span>
               </button>
             )}
