@@ -456,7 +456,7 @@ export function GardenHome() {
           </div>
         )}
       </main>
-      {stage > 0 && (<footer className="garden-footer">
+      {stage > 0 && ({stage > 0 && (<footer className="garden-footer">
         <div className="garden-chapter">
           <span>0{stage + 1}</span>
           <i />
@@ -495,7 +495,7 @@ export function GardenHome() {
             {text("环境音", "Ambience")} · {sound ? text("开", "On") : text("关", "Off")}
           </button>
         </div>
-      </footer>
+      </footer>)}
       <div className="garden-flash" aria-hidden="true" />
     </div>
   );
