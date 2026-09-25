@@ -208,7 +208,7 @@ export function GardenHome() {
       />
       <div className="garden-shade" aria-hidden="true" />
       <div className="garden-grain" aria-hidden="true" />
-      <header className="garden-header">
+      {stage > 0 && (<header className="garden-header">
         <Link to="/" className="garden-brand" onClick={() => setStage(0)}>
           <span className="garden-mark" aria-hidden="true">
             Ⅱ
@@ -230,7 +230,7 @@ export function GardenHome() {
             {text("直接进入曲库", "Skip to library")} <ArrowUpRight size={16} />
           </Link>
         </nav>
-      </header>
+      </header>)}
       <main>
         <section
           className="garden-panel"
@@ -239,28 +239,20 @@ export function GardenHome() {
           aria-labelledby="garden-heading"
           key={stage}
         >
-          <div className="garden-eyebrow">
-            <span />
-            {["THE FORGOTTEN GARDEN", "THE UNFOLDING", "THE REPERTOIRE"][stage]}
-          </div>
+          {stage > 0 && (
+            <div className="garden-eyebrow">
+              <span />
+              {["THE FORGOTTEN GARDEN", "THE UNFOLDING", "THE REPERTOIRE"][stage]}
+            </div>
+          )}
           {stage === 0 ? (
             <>
-              <h1 id="garden-heading">
-                {text("万物归于寂静。", "The world falls quiet.")}
-                <br />
-                {text("而你，唤醒回响。", "You bring it to life.")}
-              </h1>
-              <p>
-                {text("让世界慢下来。", "Let the world slow down.")}
-                <br />
-                {text("今天的第一颗音符，从这里开始。", "Your first note of today begins here.")}
-              </p>
               <Button className="garden-primary garden-plain" onClick={() => setStage(1)}>
                 {text("靠近钢琴", "APPROACH")}
                 <ArrowUpRight />
               </Button>
-              <small className="garden-hint">APPROACH THE PIANO</small>
             </>
+
           ) : stage === 1 ? (
             <>
               <h1 id="garden-heading">{text("让旋律，有所归处。", "A home for your music.")}</h1>
@@ -464,7 +456,7 @@ export function GardenHome() {
           </div>
         )}
       </main>
-      <footer className="garden-footer">
+      {stage > 0 && (<footer className="garden-footer">
         <div className="garden-chapter">
           <span>0{stage + 1}</span>
           <i />
