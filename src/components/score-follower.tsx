@@ -348,7 +348,7 @@ export function FollowerCore({
 
   // ---- render ----
   const sheet = (
-    <div className={focus ? "relative overflow-hidden rounded-md bg-[var(--fr-paper)] shadow-[0_1px_2px_rgba(30,42,50,.08),0_12px_32px_rgba(30,42,50,.08)]" : "score-sheet relative mt-4 overflow-hidden rounded-lg"}>
+    <div className={focus ? "focus-score-paper relative overflow-hidden bg-[var(--fr-paper)]" : "score-sheet relative mt-4 overflow-hidden rounded-lg"}>
         <div className="grid gap-px bg-border">
           {visibleHalves.map((half, slot) => {
             const page = halfPage(half);
@@ -388,7 +388,7 @@ export function FollowerCore({
                           type="button"
                           onClick={() => jumpTo(m.index)}
                           title={text(`从第 ${printedNumber(m.index)} 小节开始`, `Start from measure ${printedNumber(m.index)}`)}
-                          className={`absolute rounded-sm transition-colors ${active ? "bg-amber-400/20" : "hover:bg-amber-400/10"}`}
+                          className={`absolute rounded-sm transition-colors ${active ? "bg-primary/20" : "hover:bg-primary/10"}`}
                           style={{
                             left: `${m.left * 100}%`,
                             width: `${(m.right - m.left) * 100}%`,
@@ -400,7 +400,7 @@ export function FollowerCore({
                     })}
                     {measure && here && measureHalf(measure) === half && (
                       <div
-                        className="pointer-events-none absolute w-[3px] rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]"
+                        className="score-follow-cursor pointer-events-none absolute w-[3px] rounded-full bg-primary"
                         style={{
                           left: `${(measure.left + (measure.right - measure.left) * here.progress) * 100}%`,
                           top: `${((measure.top - (lower ? 0.5 : 0)) - (measure.bottom - measure.top) * 0.12) * 200}%`,
@@ -511,10 +511,10 @@ export function FollowerCore({
               className={`size-3 rounded-full border transition-colors ${
                 i === beatInMeasure
                   ? counting
-                    ? "border-sky-400 bg-sky-400"
+                    ? "border-primary bg-primary"
                     : i === 0
-                      ? "border-amber-400 bg-amber-400"
-                      : "border-amber-300 bg-amber-300/80"
+                      ? "border-primary bg-primary"
+                      : "border-primary/70 bg-primary/70"
                   : "border-border bg-transparent"
               }`}
             />

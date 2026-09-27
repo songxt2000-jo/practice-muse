@@ -373,7 +373,7 @@ function PracticeStudio() {
         {focusAi && piece?.abc_notation && (
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-              <div className="relative mx-auto max-w-3xl overflow-hidden rounded-md bg-[var(--fr-paper)] shadow-[0_1px_2px_rgba(30,42,50,.08),0_12px_32px_rgba(30,42,50,.08)]">
+              <div className="focus-score-paper relative mx-auto max-w-3xl overflow-hidden bg-[var(--fr-paper)]">
                 <div className="overflow-hidden px-3 py-2 sm:px-5">
                   <div ref={player.containerRef} className="transition-transform duration-500" />
                 </div>
@@ -455,7 +455,7 @@ function PracticeStudio() {
 
               <div className="hidden items-center gap-1.5 sm:flex" aria-label={text("拍点", "Beats")}>
                 {Array.from({ length: 4 }, (_, index) => (
-                  <span key={index} className={`size-3 rounded-full border ${player.playing && player.beat % 4 === index ? "border-amber-400 bg-amber-400" : "border-[var(--fr-line)]"}`} />
+                  <span key={index} className={`size-3 rounded-full border ${player.playing && player.beat % 4 === index ? "border-primary bg-primary" : "border-[var(--fr-line)]"}`} />
                 ))}
               </div>
               <Metronome bpm={tempo} syncBeat={player.beat} syncing={player.playing} />
