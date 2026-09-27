@@ -176,12 +176,29 @@
   --border: oklch(0.66 0.06 91 / 0.28);
   --input: oklch(0.56 0.04 100 / 0.35);
   --ring: oklch(0.76 0.075 91);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   color-scheme: dark;
   color: var(--color-foreground);
 }
 
 .sanctuary-theme:not(.site-header) {
-  background-color: var(--color-background);
+  background-color: var(--background);
   background-image:
     linear-gradient(115deg, oklch(0.105 0.018 155 / 0.72), transparent 48%),
     radial-gradient(70% 85% at 82% 8%, oklch(0.31 0.042 142 / 0.46), transparent 67%),
