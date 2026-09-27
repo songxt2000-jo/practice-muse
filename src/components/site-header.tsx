@@ -27,7 +27,7 @@ export function SiteHeader({ authenticated = false }: { authenticated?: boolean 
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur">
+    <header className={`site-header sticky top-0 z-30 border-b border-border/70 bg-background/85 backdrop-blur ${authenticated ? "site-header-auth sanctuary-theme" : ""}`}>
       <div className="mx-auto grid min-h-16 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 sm:px-5">
         <div className="flex items-center justify-start gap-1 sm:gap-2">
           {showBack && (

@@ -253,7 +253,7 @@ function PracticeStudio() {
         className={
           focus
             ? "focus-room flex h-[100dvh] flex-col"
-            : "min-h-screen bg-background px-5 py-6"
+            : "sanctuary-theme practice-workspace min-h-screen bg-background px-5 py-6"
         }
       >
         {focus && (
@@ -312,7 +312,7 @@ function PracticeStudio() {
           </div>
         </div>
 
-        <div className={focus ? "hidden" : "mt-4 inline-flex rounded-full border border-border p-1 text-sm"}>
+        <div className={focus ? "hidden" : "practice-mode-switch mt-4 inline-flex border border-border p-1 text-sm"}>
           {([
             ["follow", text("原谱跟随", "Follow original")],
             ["ai", text("AI 识谱", "AI notation")],
@@ -325,7 +325,7 @@ function PracticeStudio() {
                 else player.pause();
                 void navigate({ to: ".", search: { mode: value }, replace: true });
               }}
-              className={`rounded-full px-4 py-1 transition ${
+              className={`px-4 py-1 transition ${
                 mode === value ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
             >
