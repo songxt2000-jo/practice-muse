@@ -138,9 +138,9 @@ function ArchivePage() {
 
   return (
     <AppShell>
-      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
+      <div className="archive-workspace grid gap-8 lg:grid-cols-[1fr_320px]">
         <section>
-          <h1 className="text-3xl">{text("我的曲库", "My library")}</h1>
+          <h1 className="archive-title text-4xl">{text("我的曲库", "My library")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {text("每本曲集可以自动拆分出曲目，点开曲目再按需识谱。", "Organize every collection into pieces, then transcribe only what you need.")}
           </p>
@@ -155,7 +155,7 @@ function ArchivePage() {
                 key={book.id}
                 to="/books/$bookId"
                 params={{ bookId: book.id }}
-                className="surface-salon group rounded-xl p-5 transition hover:border-primary"
+                className="surface-salon archive-book group p-5 transition hover:border-primary"
               >
                 <BookOpen className="size-5 text-primary" />
                 <h2 className="mt-3 text-xl group-hover:text-primary">{book.title}</h2>
@@ -171,7 +171,7 @@ function ArchivePage() {
           <MyCollections />
         </section>
 
-        <aside className="surface-salon h-fit rounded-xl p-5">
+        <aside className="surface-salon archive-upload h-fit p-5">
           <h2 className="text-xl">{text("上传乐谱", "Upload scores")}</h2>
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button
