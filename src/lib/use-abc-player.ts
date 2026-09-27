@@ -84,12 +84,18 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
   const pageCount = Math.max(1, Math.ceil(lineCount / linesPerPage));
 
   const applyPage = useCallback((next: number) => {
-    const groups = groupsRef.current;
     const container = containerRef.current;
     if (!container) return;
+    let groups = groupsRef.current;
+    // abcjs may re-render the SVG (e.g. when playback starts); refresh stale refs.
+    if (!groups.length || groups.some((g) => !g.isConnected || !container.contains(g))) {
+      groups = Array.from(container.querySelectorAll<HTMLElement>(".abcjs-staff-wrapper"));
+      groupsRef.current = groups;
+    }
     const viewport = container.parentElement as HTMLElement | null;
     if (!groups.length || !viewport) {
       container.style.transform = "";
+      if (viewport) viewport.style.height = "";
       return;
     }
     const per = linesPerPageRef.current;
@@ -97,19 +103,36 @@ export function useAbcPlayer({ abc, tempo, loop, linesPerPage = 4, onNoteClick }
     pageRef.current = clamped;
     setPageState(clamped);
 
-    // Lines and container share the same transform (even mid-transition), so
-    // their rect difference is the untransformed layout offset.
-    const containerTop = container.getBoundingClientRect().top;
-    const first = groups[clamped * per]!;
-    const lastIndex = Math.min(groups.length - 1, clamped * per + per - 1);
-    const last = groups[lastIndex]!;
-    const top = first.getBoundingClientRect().top - containerTop;
-    const bottom = last.getBoundingClientRect().bottom - containerTop;
-    if (!first.isConnected || bottom - top <= 0) return;
+    const containerRect = container.getBoundingClientRect();
+    const rel = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      return { top: r.top - containerRect.top, bottom: r.bottom - containerRect.top };
+    };
+    const startIdx = clamped * per;
+    const endIdx = Math.min(groups.length - 1, startIdx + per - 1);
+    const first = rel(groups[startIdx]!);
+    // Include notes/ledger lines above the staff: start halfway into the gap
+    // after the previous line (or at the very top for page 0).
+    let top = 0;
+    if (startIdx > 0) {
+      const prev = rel(groups[startIdx - 1]!);
+      top = Math.max(0, Math.min(first.top, (prev.bottom + first.top) / 2));
+    }
+    // Extend to the next page's first line (or the full score height) so
+    // anything hanging below the last staff is not clipped.
+    let bottom: number;
+    if (endIdx + 1 < groups.length) {
+      const nextLine = rel(groups[endIdx + 1]!);
+      const last = rel(groups[endIdx]!);
+      bottom = Math.max(last.bottom, (last.bottom + nextLine.top) / 2);
+    } else {
+      bottom = Math.max(rel(groups[endIdx]!).bottom, containerRect.height);
+    }
+    if (bottom - top <= 0) return;
 
     container.dataset['shift'] = String(top);
     container.style.transform = `translateY(${-top}px)`;
-    viewport.style.height = `${Math.max(120, bottom - top + 16)}px`;
+    viewport.style.height = `${Math.max(120, bottom - top + 8)}px`;
   }, []);
 
   const measureLines = useCallback(() => {
