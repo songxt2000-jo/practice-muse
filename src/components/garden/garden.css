@@ -184,8 +184,18 @@
 .garden-home .garden-primary.garden-plain:hover {
   border: none;
 }
+.garden-home[data-stage="0"] .garden-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100svh;
+  margin-left: 11%;
+  padding-top: 0;
+  padding-bottom: 0;
+}
 .garden-home[data-stage="0"] .garden-primary {
-  margin-top: 25px;
+  margin-top: 0;
 }
 .garden-hint {
   display: block;
